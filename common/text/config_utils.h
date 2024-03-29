@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -78,6 +79,10 @@ ConfigValueSetter SetInt(int *value);
 ConfigValueSetter SetInt(int *value, int minimum, int maximum);
 ConfigValueSetter SetBool(bool *value);
 ConfigValueSetter SetString(std::string *value);
+
+// Set a set of strings seperated by the pipe-symbol('|'). Values are intended 
+// to be OR'd together.
+ConfigValueSetter SetStringSetOr(std::set<absl::string_view> *value);
 
 // Set a string, but verify that it is only one of a limited set. The
 // set is provided as vector for simplicity and to allow the caller to
