@@ -50,4 +50,8 @@ const Symbol *GetDimensionRangeRightBound(const verible::Symbol &s) {
   return verible::GetSubtreeAsSymbol(s, NodeEnum::kDimensionRange, 3);
 }
 
+const Symbol *GetDimensionScalar(const verible::Symbol &s) {
+  return verible::GetSubtreeAsSymbol(s, NodeEnum::kDimensionScalar, 1);
+}
+
 }  // namespace verilog

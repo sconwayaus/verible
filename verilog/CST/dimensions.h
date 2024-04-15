@@ -47,6 +47,9 @@ const verible::Symbol *GetDimensionRangeLeftBound(const verible::Symbol &);
 // node.
 const verible::Symbol *GetDimensionRangeRightBound(const verible::Symbol &);
 
+// Returns y from [y] declared dimensions. Argument must be a DimensionScalar
+const verible::Symbol *GetDimensionScalar(const verible::Symbol &s);
+
 }  // namespace verilog
 
 #endif  // VERIBLE_VERILOG_CST_DIMENSIONS_H_
