@@ -38,9 +38,12 @@ class UnpackedDimensionsRule : public verible::SyntaxTreeLintRule {
   void HandleSymbol(const verible::Symbol &symbol,
                     const verible::SyntaxTreeContext &context) final;
   verible::LintRuleStatus Report() const final;
+  absl::Status Configure(const absl::string_view configuration);
 
  private:
   std::set<verible::LintViolation> violations_;
+  bool is_range_order_big_endian = true;
+  bool allow_zero_based_range = false;
 };
 
 }  // namespace analysis
