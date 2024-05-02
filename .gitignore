@@ -14,3 +14,4 @@ verible_clang-tidy.out
 .envrc
 .direnv
 user.bazelrc
+verilog/tools/ls/vscode/bin/verible-verilog-ls
