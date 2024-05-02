@@ -30,24 +30,46 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "verible",
+      "title": "Verible",
       "properties": {
-        "verible.path": {
+        "verible.languageServer.path": {
           "type": "string",
           "default": "verible-verilog-ls",
           "scope": "machine-overridable",
-          "description": "The path to verible-verilog-ls executable, e.g.: /usr/bin/verible-verilog-ls."
+          "description": "The path to verible-verilog-ls executable, e.g.: /usr/bin/verible-verilog-ls.",
+          "order": 0
         },
-        "verible.arguments": {
+        "verible.languageServer.arguments": {
           "type": "array",
           "default": [],
           "items": {
             "type": "string"
           },
-          "description": "Arguments for verible-verilog-ls server."
+          "description": "Arguments for verible-verilog-ls server.",
+          "order": 1
+        },
+        "verible.projectFileList.includeGlobPattern": {
+          "type": "string",
+          "default": "{**/*.sv,**/*.svh,**/*.v}",
+          "scope": "machine-overridable",
+          "description": "Include file glob pattern for creating a project file list (verible.filelist).",
+          "order": 2
+        },
+        "verible.projectFileList.excludeGlobPattern": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "description": "Exclude file glob pattern for creating a project file list (verible.filelist).",
+          "order": 3
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "verible.create_project_file_list",
+        "title": "Verible: Create Project File List (verible.filelist)"
+      }
+    ]
   },
   "activationEvents": [
     "onLanguage:systemverilog",
