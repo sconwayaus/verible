@@ -1816,6 +1816,7 @@ cc_library(
         "//common/analysis/matcher",
         "//common/analysis/matcher:bound-symbol-manager",
         "//common/text:symbol",
+        "//common/text:config-utils",
         "//common/text:syntax-tree-context",
         "//common/text:token-info",
         "//common/util:logging",

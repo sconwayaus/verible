@@ -57,6 +57,13 @@ TEST(PortNameSuffixRuleTest, AcceptTests) {
       {"module t (input bit name_i); endmodule;"},
       {"module t (output bit abc_o); endmodule;"},
       {"module t (inout bit xyz_io); endmodule;"},
+
+      {"module t (some_interface.a b_a); endmodule;"},
+      {"module t (some_interface.some_mport c_some_mport); endmodule;"},
+      {"module t (some_interface intf); endmodule;"},   // interface without modport (FIXME: is this even valid?)
+      {"module t (interface d); endmodule;"},           // A generic interface
+      
+
       {"module t (input logic name_i,\n"
        "output logic abc_o,\n"
        "inout logic xyz_io,\n"
@@ -108,6 +115,12 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (output logic ", {kToken, "name_pi"}, "); endmodule;"},
       {"module t (output logic ", {kToken, "name_pio"}, "); endmodule;"},
 
+      {"module t (some_interface.a ", {kToken, "b_c"}, "); endmodule;"},
+      {"module t (some_interface.d ", {kToken, "e"}, "); endmodule;"},
+      {"module t (some_interface.f ", {kToken, "g_"}, "); endmodule;"},
+      {"module t (some_interface.h ", {kToken, "_h_i"}, "); endmodule;"},
+      {"module t (some_interface.j ", {kToken, "j_k"}, "); endmodule;"},
+
       {"module t (input logic ",
        {kToken, "name"},
        ",\n"
@@ -132,10 +145,12 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (input logic ", {kToken, "name_I"}, "); endmodule;"},
       {"module t (output logic ", {kToken, "abc_O"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "xyz_IO"}, "); endmodule;"},
+      {"module t (some_intf.mport ", {kToken, "xyz_MPORT"}, "); endmodule;"},
       // no underscore
       {"module t (input logic ", {kToken, "namei"}, "); endmodule;"},
       {"module t (output logic ", {kToken, "abco"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "xyzio"}, "); endmodule;"},
+      {"module t (some_intf.abc ", {kToken, "xyzabc"}, "); endmodule;"},
       // Mismatched suffix tests
       {"module t (input logic ", {kToken, "name_o"}, "); endmodule;"},
       {"module t (input logic ", {kToken, "name_io"}, "); endmodule;"},
@@ -143,6 +158,9 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (output logic ", {kToken, "name_io"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "name_i"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "name_o"}, "); endmodule;"},
+      {"module t (some_intf.abc ", {kToken, "name_i"}, "); endmodule;"},
+      {"module t (some_intf.abc ", {kToken, "name_o"}, "); endmodule;"},
+      {"module t (some_intf.abc ", {kToken, "name_io"}, "); endmodule;"},
   };
   RunLintTestCases<VerilogAnalyzer, PortNameSuffixRule>(kTestCases);
 }
