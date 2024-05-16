@@ -62,10 +62,10 @@ absl::Status ConstraintNameStyleRule::Configure(
 
   regex = std::make_unique<re2::RE2>(pattern, re2::RE2::Quiet);
   if (!regex->ok()) {
-    std::cerr << "[ERR] Error parsing pattern " << std::quoted(pattern) << ": "
-              << regex->error()
-              << ". Falling back to the default configuration: "
-              << std::quoted(kSuffix);
+    std::cerr << "[ERR] Error parsing pattern \"" << pattern
+              << "\": " << regex->error()
+              << ". Falling back to the default configuration: \"" << kSuffix
+              << "\"\n";
     regex = std::make_unique<re2::RE2>(kSuffix);
   }
 
