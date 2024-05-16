@@ -15,6 +15,7 @@
 #include "verilog/analysis/checkers/truncated_numeric_literal_rule.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <set>
@@ -28,11 +29,10 @@
 #include "common/analysis/matcher/bound_symbol_manager.h"
 #include "common/analysis/matcher/matcher.h"
 #include "common/text/concrete_syntax_leaf.h"
-#include "common/text/config_utils.h"
+#include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"
 #include "common/text/token_info.h"
-#include "common/util/logging.h"
 #include "verilog/CST/numbers.h"
 #include "verilog/CST/verilog_matchers.h"
 #include "verilog/analysis/descriptions.h"
@@ -142,6 +142,8 @@ static size_t GetBitWidthOfNumber(const BasedNumber &n, bool *is_lower_bound) {
       // Uh, more than 300-ish decimal digits ? ... rough estimation it is.
       return ceil((literal.length() - 1) * log(10) / log(2));
     } break;
+    default:
+      break;  // unexpected base
   }
   return 0;  // not reached.
 }

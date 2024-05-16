@@ -13,9 +13,10 @@
 // limitations under the License.
 //
 
-#include <functional>
 #include <iostream>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "common/util/init_command_line.h"
 #include "verilog/tools/ls/verilog-language-server.h"
 
@@ -29,9 +30,17 @@
 #define read(fd, buf, size) _read(fd, buf, size)
 #endif
 
-int main(int argc, char *argv[]) {
-  verible::InitCommandLine(argv[0], &argc, &argv);
+// Since it is hard to see what exactly the editor passes to the language
+// server, let's log it, so it can be inspected in the log.
+static void LogCommandline(int argc, char **argv) {
+  std::cerr << "commandline: ";
+  for (int i = 0; i < argc; ++i) {
+    std::cerr << argv[i] << " ";
+  }
+  std::cerr << "\n";
+}
 
+int main(int argc, char *argv[]) {
 #ifdef _WIN32
   // Windows messes with newlines by default. Fix this here.
   _setmode(_fileno(stdin), _O_BINARY);
@@ -40,6 +49,10 @@ int main(int argc, char *argv[]) {
 
   std::cerr << "Verible Verilog Language Server built at "
             << verible::GetRepositoryVersion() << "\n";
+  LogCommandline(argc, argv);
+
+  // Initialize flags from the command line.
+  verible::InitCommandLine(argv[0], &argc, &argv);
 
   // -- Input and output is stdin and stdout.
 
@@ -57,7 +70,7 @@ int main(int argc, char *argv[]) {
     return read(kInputFD, buf, size);
   });
 
-  std::cerr << status.message() << std::endl;
+  std::cerr << status << '\n';
 
   server.PrintStatistics();
 }

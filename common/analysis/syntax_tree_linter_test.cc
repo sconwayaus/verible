@@ -14,10 +14,12 @@
 
 #include "common/analysis/syntax_tree_linter.h"
 
+#include <cstddef>
 #include <memory>
 #include <set>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/syntax_tree_lint_rule.h"
 #include "common/text/concrete_syntax_leaf.h"
@@ -26,6 +28,7 @@
 #include "common/text/syntax_tree_context.h"
 #include "common/text/token_info.h"
 #include "common/text/tree_builder_test_util.h"
+#include "common/util/casts.h"
 #include "gtest/gtest.h"
 
 namespace verible {

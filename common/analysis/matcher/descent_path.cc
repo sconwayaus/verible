@@ -14,12 +14,12 @@
 
 #include "common/analysis/matcher/descent_path.h"
 
-#include <iterator>
 #include <memory>
 #include <vector>
 
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
+#include "common/util/casts.h"
 
 namespace verible {
 namespace matcher {

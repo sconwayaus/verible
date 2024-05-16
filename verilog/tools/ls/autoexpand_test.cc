@@ -15,6 +15,7 @@
 #include "verilog/tools/ls/autoexpand.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -22,11 +23,21 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "common/lsp/lsp-protocol.h"
+#include "common/lsp/lsp-text-buffer.h"
+#include "common/text/text_structure.h"
 #include "gtest/gtest.h"
+#include "nlohmann/json.hpp"
+#include "verilog/analysis/verilog_analyzer.h"
+#include "verilog/analysis/verilog_project.h"
+#include "verilog/formatting/format_style.h"
 #include "verilog/formatting/format_style_init.h"
 #include "verilog/formatting/formatter.h"
-#include "verilog/tools/ls/verible-lsp-adapter.h"
+#include "verilog/tools/ls/lsp-parse-buffer.h"
+#include "verilog/tools/ls/symbol-table-handler.h"
 
 namespace verilog {
 namespace {
@@ -142,7 +153,7 @@ void TestTextEditsWithProject(
   SymbolTableHandler symbol_table_handler;
   symbol_table_handler.SetProject(proj);
   symbol_table_handler.UpdateFileContent(TESTED_FILENAME,
-                                         &tracker.current()->parser().Data());
+                                         &tracker.current()->parser());
   symbol_table_handler.BuildProjectSymbolTable();
   // Run the tested edit function
   std::vector<TextEdit> edits = run.edit_fn(&symbol_table_handler, &tracker);

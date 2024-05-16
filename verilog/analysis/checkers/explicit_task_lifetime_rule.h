@@ -16,11 +16,8 @@
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_EXPLICIT_TASK_LIFETIME_RULE_H_
 
 #include <set>
-#include <string>
 
 #include "common/analysis/lint_rule_status.h"
-#include "common/analysis/matcher/matcher.h"
-#include "common/analysis/matcher/matcher_builders.h"
 #include "common/analysis/syntax_tree_lint_rule.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"

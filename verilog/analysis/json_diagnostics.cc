@@ -14,12 +14,14 @@
 
 #include "verilog/analysis/json_diagnostics.h"
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "common/analysis/file_analyzer.h"
 #include "common/strings/line_column_map.h"
+#include "nlohmann/json.hpp"
 #include "verilog/analysis/verilog_analyzer.h"
 
 using nlohmann::json;

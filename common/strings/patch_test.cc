@@ -14,6 +14,7 @@
 
 #include "common/strings/patch.h"
 
+#include <cstddef>
 #include <initializer_list>
 #include <sstream>
 #include <string>
@@ -26,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "common/strings/position.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

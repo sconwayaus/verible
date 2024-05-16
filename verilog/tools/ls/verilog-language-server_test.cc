@@ -22,13 +22,18 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 #include "common/lsp/lsp-file-utils.h"
 #include "common/lsp/lsp-protocol-enums.h"
 #include "common/lsp/lsp-protocol.h"
+#include "common/strings/line_column_map.h"
 #include "common/util/file_util.h"
 #include "gtest/gtest.h"
+#include "nlohmann/json.hpp"
 #include "verilog/analysis/verilog_linter.h"
 
 #undef ASSERT_OK
@@ -118,7 +123,7 @@ class VerilogLanguageServerTest : public ::testing::Test {
   // Sets up the testing environment - creates Language Server object and
   // sends textDocument/initialize request.
   // It stores the response in initialize_response field for further processing
-  void SetUp() override {
+  void SetUp() override {  // not yet final
     server_ = std::make_unique<VerilogLanguageServer>(
         [this](absl::string_view response) { response_stream_ << response; });
 
@@ -143,7 +148,7 @@ class VerilogLanguageServerTest : public ::testing::Test {
 
 class VerilogLanguageServerSymbolTableTest : public VerilogLanguageServerTest {
  public:
-  absl::Status InitializeCommunication() override {
+  absl::Status InitializeCommunication() final {
     json initialize_request = {
         {"jsonrpc", "2.0"},
         {"id", 1},
@@ -153,7 +158,7 @@ class VerilogLanguageServerSymbolTableTest : public VerilogLanguageServerTest {
   }
 
  protected:
-  void SetUp() override {
+  void SetUp() final {
     absl::SetFlag(&FLAGS_rules_config_search, true);
     root_dir = verible::file::JoinPath(
         ::testing::TempDir(),
@@ -163,7 +168,7 @@ class VerilogLanguageServerSymbolTableTest : public VerilogLanguageServerTest {
     VerilogLanguageServerTest::SetUp();
   }
 
-  void TearDown() override { std::filesystem::remove(root_dir); }
+  void TearDown() final { std::filesystem::remove(root_dir); }
 
   // path to the project
   std::string root_dir;
@@ -728,6 +733,93 @@ void CheckDefinitionResponseSingleDefinition(const json &response, int id,
   ASSERT_EQ(response["id"], id);
   ASSERT_EQ(response["result"].size(), 1);
   CheckDefinitionEntry(response["result"][0], start, end, file_uri);
+}
+
+// Creates a textDocument/hover request
+std::string HoverRequest(absl::string_view file, int id, int line,
+                         int character) {
+  return TextDocumentPositionBasedRequest("textDocument/hover", file, id, line,
+                                          character);
+}
+
+// Checks if the hover appears on port symbols
+// In this test the hover for "sum" symbol in assign
+// is checked
+TEST_F(VerilogLanguageServerSymbolTableTest, HoverOverSymbol) {
+  absl::string_view filelist_content = "mod.v\n";
+  static constexpr absl::string_view  //
+      module_content(
+          R"(module mod(
+    input clk,
+    input reg [31:0] a,
+    input reg [31:0] b,
+    output reg [31:0] sum);
+  always @(posedge clk) begin : addition
+    assign sum = a + b; // hover over sum
+  end
+endmodule
+)");
+
+  const verible::file::testing::ScopedTestFile filelist(
+      root_dir, filelist_content, "verible.filelist");
+  const verible::file::testing::ScopedTestFile module(root_dir, module_content,
+                                                      "mod.v");
+
+  const std::string module_open_request =
+      DidOpenRequest("file://" + module.filename(), module_content);
+  ASSERT_OK(SendRequest(module_open_request));
+
+  GetResponse();
+
+  std::string hover_request = HoverRequest("file://" + module.filename(), 2,
+                                           /* line */ 6, /* column */ 12);
+
+  ASSERT_OK(SendRequest(hover_request));
+  json response = json::parse(GetResponse());
+  verible::lsp::Hover hover = response["result"];
+  ASSERT_EQ(hover.contents.kind, "markdown");
+  ASSERT_TRUE(
+      absl::StrContains(hover.contents.value, "data/net/var/instance sum"));
+  ASSERT_TRUE(absl::StrContains(hover.contents.value, "reg [31:0]"));
+}
+
+// Checks if the hover appears on "end" token when block name is available
+TEST_F(VerilogLanguageServerSymbolTableTest, HoverOverEnd) {
+  absl::string_view filelist_content = "mod.v\n";
+  static constexpr absl::string_view  //
+      module_content(
+          R"(module mod(
+    input clk,
+    input reg [31:0] a,
+    input reg [31:0] b,
+    output reg [31:0] sum);
+  always @(posedge clk) begin : addition
+    assign sum = a + b;
+  end // hover over end
+endmodule
+)");
+
+  const verible::file::testing::ScopedTestFile filelist(
+      root_dir, filelist_content, "verible.filelist");
+  const verible::file::testing::ScopedTestFile module(root_dir, module_content,
+                                                      "mod.v");
+
+  const std::string module_open_request =
+      DidOpenRequest("file://" + module.filename(), module_content);
+  ASSERT_OK(SendRequest(module_open_request));
+
+  GetResponse();
+
+  std::string hover_request = HoverRequest("file://" + module.filename(), 2,
+                                           /* line */ 7, /* column */ 3);
+
+  ASSERT_OK(SendRequest(hover_request));
+  json response = json::parse(GetResponse());
+  verible::lsp::Hover hover = response["result"];
+
+  ASSERT_EQ(hover.contents.kind, "markdown");
+  ASSERT_TRUE(absl::StrContains(hover.contents.value, "End of block"));
+  ASSERT_TRUE(absl::StrContains(hover.contents.value, "Name: addition"));
 }
 
 // Performs simple textDocument/definition request with no VerilogProject set
@@ -1885,6 +1977,244 @@ endmodule
                        {.line = 2, .column = 12}, module_port_identifier_uri);
   CheckDefinitionEntry(response["result"][1], {.line = 5, .column = 16},
                        {.line = 5, .column = 17}, module_port_identifier_uri);
+}
+
+std::string RenameRequest(const verible::lsp::RenameParams &params) {
+  json request = {{"jsonrpc", "2.0"},
+                  {"id", 2},
+                  {"method", "textDocument/rename"},
+                  {"params", params}};
+  return request.dump();
+}
+std::string PrepareRenameRequest(
+    const verible::lsp::PrepareRenameParams &params) {
+  json request = {{"jsonrpc", "2.0"},
+                  {"id", 2},
+                  {"method", "textDocument/prepareRename"},
+                  {"params", params}};
+  return request.dump();
+}
+// Runs tests for textDocument/rangeFormatting requests
+TEST_F(VerilogLanguageServerSymbolTableTest,
+       PrepareRenameReturnsRangeOfEditableSymbol) {
+  // Create sample file and make sure diagnostics do not have errors
+  std::string file_uri = PathToLSPUri(absl::string_view(root_dir + "/fmt.sv"));
+  verible::lsp::PrepareRenameParams params;
+  params.position.line = 2;
+  params.position.character = 1;
+  params.textDocument.uri = file_uri;
+
+  const std::string mini_module =
+      DidOpenRequest(file_uri,
+                     "module fmt();\nfunction automatic "
+                     "bar();\nbar();\nbar();\nendfunction;\nendmodule\n");
+  ASSERT_OK(SendRequest(mini_module));
+
+  const json diagnostics = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+  EXPECT_EQ(diagnostics["params"]["uri"], file_uri)
+      << "Diagnostics for invalid file";
+
+  EXPECT_EQ(diagnostics["params"]["diagnostics"].size(), 0)
+      << "The test file has errors";
+  ASSERT_OK(SendRequest(PrepareRenameRequest(params)));
+
+  const json response = json::parse(GetResponse());
+  EXPECT_EQ(response["result"]["start"]["line"], 2)
+      << "Invalid result for id:  ";
+  EXPECT_EQ(response["result"]["start"]["character"], 0)
+      << "Invalid result for id:  ";
+  EXPECT_EQ(response["result"]["end"]["line"], 2) << "Invalid result for id:  ";
+  EXPECT_EQ(response["result"]["end"]["character"], 3)
+      << "Invalid result for id:  ";
+}
+
+TEST_F(VerilogLanguageServerSymbolTableTest, PrepareRenameReturnsNull) {
+  // Create sample file and make sure diagnostics do not have errors
+  std::string file_uri = PathToLSPUri(absl::string_view(root_dir + "/fmt.sv"));
+  verible::lsp::PrepareRenameParams params;
+  params.position.line = 1;
+  params.position.character = 1;
+  params.textDocument.uri = file_uri;
+
+  const std::string mini_module =
+      DidOpenRequest(file_uri,
+                     "module fmt();\nfunction automatic "
+                     "bar();\nbar();\nbar();\nendfunction;\nendmodule\n");
+  ASSERT_OK(SendRequest(mini_module));
+
+  const json diagnostics = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+  EXPECT_EQ(diagnostics["params"]["uri"], file_uri)
+      << "Diagnostics for invalid file";
+
+  EXPECT_EQ(diagnostics["params"]["diagnostics"].size(), 0)
+      << "The test file has errors";
+  ASSERT_OK(SendRequest(PrepareRenameRequest(params)));
+
+  const json response = json::parse(GetResponse());
+  EXPECT_EQ(response["result"], nullptr) << "Invalid result for id:  ";
+}
+
+TEST_F(VerilogLanguageServerSymbolTableTest, RenameTestSymbolSingleFile) {
+  // Create sample file and make sure diagnostics do not have errors
+  std::string file_uri =
+      PathToLSPUri(absl::string_view(root_dir + "/rename.sv"));
+  verible::lsp::RenameParams params;
+  params.position.line = 2;
+  params.position.character = 1;
+  params.textDocument.uri = file_uri;
+  params.newName = "foo";
+
+  absl::string_view filelist_content = "rename.sv\n";
+
+  const verible::file::testing::ScopedTestFile filelist(
+      root_dir, filelist_content, "verible.filelist");
+  const verible::file::testing::ScopedTestFile module_foo(
+      root_dir,
+      "module rename();\nfunction automatic "
+      "bar();\nbar();\nbar();\nendfunction;\nendmodule\n",
+      "rename.sv");
+
+  const std::string mini_module =
+      DidOpenRequest(file_uri,
+                     "module rename();\nfunction automatic "
+                     "bar();\nbar();\nbar();\nendfunction;\nendmodule\n");
+
+  ASSERT_OK(SendRequest(mini_module));
+
+  const json diagnostics = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+
+  EXPECT_EQ(diagnostics["params"]["uri"],
+            PathToLSPUri(verible::lsp::LSPUriToPath(file_uri)))
+      << "Diagnostics for invalid file";
+  EXPECT_EQ(diagnostics["params"]["diagnostics"].size(), 0)
+      << "The test file has errors";
+  std::string request = RenameRequest(params);
+  ASSERT_OK(SendRequest(request));
+
+  const json response = json::parse(GetResponse());
+  EXPECT_EQ(response["result"]["changes"].size(), 1)
+      << "Invalid result size for id:  ";
+  EXPECT_EQ(response["result"]["changes"][file_uri].size(), 3)
+      << "Invalid result size for id:  ";
+}
+
+TEST_F(VerilogLanguageServerSymbolTableTest, RenameTestSymbolMultipleFiles) {
+  // Create sample file and make sure diagnostics do not have errors
+  std::string top_uri = PathToLSPUri(absl::string_view(root_dir + "/top.sv"));
+  std::string foo_uri = PathToLSPUri(absl::string_view(root_dir + "/foo.sv"));
+  verible::lsp::RenameParams params;
+  params.position.line = 2;
+  params.position.character = 9;
+  params.textDocument.uri = top_uri;
+  params.newName = "foobaz";
+  std::string foosv =
+      "package foo;\n"
+      "    class foobar;\n"
+      "    endclass;\n"
+      "endpackage;\n";
+  std::string topsv =
+      "import foo::*;\n"
+      "module top;\n"
+      "  foo::foobar bar;\n"
+      "endmodule;\n";
+  absl::string_view filelist_content = "./foo.sv\n./top.sv\n";
+
+  const verible::file::testing::ScopedTestFile filelist(
+      root_dir, filelist_content, "verible.filelist");
+  const verible::file::testing::ScopedTestFile module_foo(root_dir, foosv,
+                                                          "foo.sv");
+
+  const verible::file::testing::ScopedTestFile module_top(root_dir, topsv,
+                                                          "top.sv");
+  const std::string top_request = DidOpenRequest(top_uri, topsv);
+  ASSERT_OK(SendRequest(top_request));
+
+  const json diagnostics = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+  EXPECT_EQ(diagnostics["params"]["uri"],
+            PathToLSPUri(verible::lsp::LSPUriToPath(top_uri)))
+      << "Diagnostics for invalid file";
+
+  const std::string foo_request = DidOpenRequest(foo_uri, foosv);
+  ASSERT_OK(SendRequest(foo_request));
+
+  const json diagnostics_foo = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics_foo["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+  EXPECT_EQ(diagnostics_foo["params"]["uri"],
+            PathToLSPUri(verible::lsp::LSPUriToPath(foo_uri)))
+      << "Diagnostics for invalid file";
+
+  // Complaints about package and file names
+  EXPECT_EQ(diagnostics["params"]["diagnostics"].size(), 0)
+      << "The test file has errors";
+  std::string request = RenameRequest(params);
+  ASSERT_OK(SendRequest(request));
+
+  const json response = json::parse(GetResponse());
+  EXPECT_EQ(response["result"]["changes"].size(), 2)
+      << "Invalid result size for id:  ";
+  EXPECT_EQ(response["result"]["changes"][top_uri].size(), 1)
+      << "Invalid result size for id:  ";
+  EXPECT_EQ(response["result"]["changes"][foo_uri].size(), 1)
+      << "Invalid result size for id:  ";
+}
+
+TEST_F(VerilogLanguageServerSymbolTableTest, RenameTestPackageDistinction) {
+  // Create sample file and make sure diagnostics do not have errors
+  std::string file_uri =
+      PathToLSPUri(absl::string_view(root_dir + "/rename.sv"));
+  verible::lsp::RenameParams params;
+  params.position.line = 7;
+  params.position.character = 15;
+  params.textDocument.uri = file_uri;
+  params.newName = "foobaz";
+  std::string renamesv =
+      "package foo;\n"
+      "    class foobar;\n"
+      "        bar::foobar baz;\n"
+      "    endclass;\n"
+      "endpackage;\n"
+      "package bar;\n"
+      "    class foobar;\n"
+      "        foo::foobar baz;\n"
+      "    endclass;\n"
+      "endpackage;\n";
+  absl::string_view filelist_content = "rename.sv\n";
+
+  const verible::file::testing::ScopedTestFile filelist(
+      root_dir, filelist_content, "verible.filelist");
+  const verible::file::testing::ScopedTestFile module_foo(root_dir, renamesv,
+                                                          "rename.sv");
+
+  const std::string mini_module = DidOpenRequest(file_uri, renamesv);
+  ASSERT_OK(SendRequest(mini_module));
+
+  const json diagnostics = json::parse(GetResponse());
+  EXPECT_EQ(diagnostics["method"], "textDocument/publishDiagnostics")
+      << "textDocument/publishDiagnostics not received";
+  EXPECT_EQ(diagnostics["params"]["uri"],
+            PathToLSPUri(verible::lsp::LSPUriToPath(file_uri)))
+      << "Diagnostics for invalid file";
+
+  // Complaints about package and file names
+  EXPECT_EQ(diagnostics["params"]["diagnostics"].size(), 2)
+      << "The test file has errors";
+  std::string request = RenameRequest(params);
+  ASSERT_OK(SendRequest(request));
+
+  const json response = json::parse(GetResponse());
+  EXPECT_EQ(response["result"]["changes"].size(), 1)
+      << "Invalid result size for id:  ";
+  EXPECT_EQ(response["result"]["changes"][file_uri].size(), 2)
+      << "Invalid result size for id:  ";
 }
 
 // Tests correctness of Language Server shutdown request

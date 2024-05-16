@@ -8,6 +8,7 @@ default_visibility = [
 package(
     default_applicable_licenses = ["//:license"],
     default_visibility = default_visibility,
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -25,6 +26,7 @@ cc_library(
         "//verilog/parser:verilog-token-enum",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -34,6 +36,9 @@ cc_test(
     deps = [
         ":obfuscate",
         "//common/strings:obfuscator",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -47,11 +52,13 @@ cc_library(
         "//common/strings:range",
         "//common/text:token-info",
         "//common/util:iterator-range",
+        "//common/util:logging",
         "//common/util:spacer",
         "//verilog/parser:verilog-lexer",
         "//verilog/parser:verilog-parser",
         "//verilog/parser:verilog-token-enum",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -60,7 +67,8 @@ cc_test(
     srcs = ["strip_comments_test.cc"],
     deps = [
         ":strip-comments",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )

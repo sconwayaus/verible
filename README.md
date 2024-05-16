@@ -172,14 +172,18 @@ guide and the [development resources](./doc/development.md).
 
 Verible's code base is written in C++.
 
-To build, you need the [bazel] (>= 5.0) build system and a C++17 compatible
-compiler (e.g. >= g++-10), as well as python3.
+To build, you need the [bazel] (>= 5.0 and <= 7) build system and a C++17
+compatible compiler (e.g. >= g++-10), as well as python3. Note, to build
+Verible with bazel-7, so you need to add `--noenable_bzlmod` to every bazel
+command. A lot of users of Verible have to work on pretty old installations,
+so we try to keep the requirements as minimal as possible.
 
 Use your package manager to install the dependencies; on a system with
 the nix package manager simply run `nix-shell` to get a build environment.
 
 ```bash
 # Build all tools and libraries
+# bazel 5/6/7
 bazel build -c opt //...
 ```
 
@@ -210,6 +214,21 @@ command line:
 ```bash
 # Also append the option '--//bazel:use_local_flex_bison' to test/install commands
 bazel build -c opt  --//bazel:use_local_flex_bison //...
+```
+
+### Building on Windows
+
+Building on Windows requires LLVM, WinFlexBison 3 and Git-bash to be installed. Using package manager [chocolatey], this can be done with
+
+```powershell
+choco install git llvm winflexbison3
+```
+
+Bazel may also require environment variable to use git-bash and LLVM, on powershell
+
+```powershell
+$env:BAZEL_SH="C:\Program Files\Git\git-bash.exe"
+$env:BAZEL_LLVM="C:\Program Files\LLVM"
 ```
 
 ### Installation
@@ -277,3 +296,4 @@ abstract syntax tree (AST) or possibly even provide more higher-level
 [UHDM]: https://github.com/chipsalliance/UHDM
 [homebrew]: https://github.com/chipsalliance/homebrew-verible
 [Nix]: https://search.nixos.org/packages?channel=unstable&query=verible
+[chocolatey]: https://chocolatey.org/

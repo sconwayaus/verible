@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <functional>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -21,8 +20,10 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/usage.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "common/text/token_stream_view.h"
 #include "common/util/file_util.h"
 #include "common/util/init_command_line.h"
 #include "common/util/status_macros.h"

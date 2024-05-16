@@ -16,8 +16,6 @@
 
 #include <vector>
 
-#include "common/analysis/matcher/matcher.h"
-#include "common/analysis/matcher/matcher_builders.h"
 #include "common/analysis/syntax_tree_search.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
@@ -25,6 +23,7 @@
 #include "verilog/CST/identifier.h"
 #include "verilog/CST/type.h"
 #include "verilog/CST/verilog_matchers.h"  // pragma IWYU: keep
+#include "verilog/CST/verilog_nonterminals.h"
 
 namespace verilog {
 

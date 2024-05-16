@@ -15,7 +15,8 @@
 #ifndef VERIBLE_COMMON_TEXT_TOKEN_INFO_H_
 #define VERIBLE_COMMON_TEXT_TOKEN_INFO_H_
 
-#include <algorithm>   // for std::distance, std::copy
+#include <algorithm>  // for std::distance, std::copy
+#include <cstddef>
 #include <functional>  // for std::function
 #include <iosfwd>
 #include <iterator>
@@ -72,8 +73,6 @@ class TokenInfo {
     Context(absl::string_view b,
             std::function<void(std::ostream&, int)> translator)
         : base(b), token_enum_translator(std::move(translator)) {}
-
-    Context(const Context&) = default;
   };
 
   int token_enum() const { return token_enum_; }

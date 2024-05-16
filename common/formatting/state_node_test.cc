@@ -14,18 +14,19 @@
 
 #include "common/formatting/state_node.h"
 
+#include <cstddef>
 #include <memory>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "common/formatting/basic_format_style.h"
 #include "common/formatting/format_token.h"
 #include "common/formatting/unwrapped_line.h"
 #include "common/formatting/unwrapped_line_test_utils.h"
+#include "common/text/token_info.h"
 #include "common/util/logging.h"
 #include "gtest/gtest.h"
 

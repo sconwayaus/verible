@@ -5,6 +5,7 @@ package(
     default_visibility = [
         "//verilog/formatting:__subpackages__",
     ],
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -17,22 +18,23 @@ cc_library(
         ":unwrapped-line",
         "//common/strings:display-utils",
         "//common/strings:position",
-        "//common/strings:range",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
+        "//common/text:symbol",
         "//common/text:token-info",
-        "//common/text:token-stream-view",
         "//common/text:tree-context-visitor",
         "//common/text:tree-utils",
-        "//common/util:algorithm",
         "//common/util:container-iterator-range",
         "//common/util:enum-flags",
+        "//common/util:iterator-adaptors",
         "//common/util:iterator-range",
         "//common/util:logging",
+        "//common/util:range",
         "//common/util:tree-operations",
         "//common/util:vector-tree",
         "//common/util:vector-tree-iterators",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -44,12 +46,22 @@ cc_test(
         ":format-token",
         ":token-partition-tree",
         ":token-partition-tree-test-utils",
+        ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/strings:position",
+        "//common/text:concrete-syntax-leaf",
+        "//common/text:concrete-syntax-tree",
+        "//common/text:symbol-ptr",
+        "//common/text:token-info",
         "//common/text:tree-builder-test-util",
+        "//common/text:tree-utils",
+        "//common/util:logging",
         "//common/util:range",
         "//common/util:spacer",
         "//common/util:value-saver",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -60,7 +72,7 @@ cc_library(
     hdrs = ["basic_format_style.h"],
     deps = [
         "//common/util:enum-flags",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -79,6 +91,7 @@ cc_test(
     srcs = ["basic_format_style_test.cc"],
     deps = [
         ":basic-format-style",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -94,11 +107,14 @@ cc_library(
         "//common/text:concrete-syntax-leaf",
         "//common/text:token-info",
         "//common/util:container-iterator-range",
-        "//common/util:iterator-adaptors",
+        "//common/util:interval",
+        "//common/util:iterator-range",
         "//common/util:logging",
+        "//common/util:range",
         "//common/util:spacer",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -107,11 +123,12 @@ cc_test(
     srcs = ["format_token_test.cc"],
     deps = [
         ":format-token",
-        ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/strings:position",
         "//common/text:token-info",
         "//common/util:range",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -125,16 +142,19 @@ cc_library(
     hdrs = ["layout_optimizer.h"],
     deps = [
         ":basic-format-style",
-        ":line-wrap-searcher",
+        ":format-token",
         ":token-partition-tree",
         ":unwrapped-line",
         "//common/util:container-iterator-range",
+        "//common/util:iterator-range",
         "//common/util:logging",
         "//common/util:tree-operations",
         "//common/util:value-saver",
         "//common/util:vector-tree",
         "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/log",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -146,17 +166,23 @@ cc_test(
     ],
     deps = [
         ":basic-format-style",
+        ":format-token",
         ":layout-optimizer",
         ":token-partition-tree",
         ":token-partition-tree-test-utils",
         ":unwrapped-line",
         ":unwrapped-line-test-utils",
         "//common/strings:split",
+        "//common/text:token-info",
+        "//common/util:iterator-range",
+        "//common/util:logging",
         "//common/util:spacer",
         "//common/util:tree-operations",
         "//common/util:vector-tree",
         "@com_google_absl//absl/container:fixed_array",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -175,15 +201,16 @@ cc_library(
         "//common/strings:display-utils",
         "//common/strings:position",
         "//common/strings:range",
-        "//common/text:tree-utils",
         "//common/util:algorithm",
         "//common/util:container-iterator-range",
         "//common/util:iterator-adaptors",
+        "//common/util:iterator-range",
         "//common/util:logging",
         "//common/util:spacer",
         "//common/util:top-n",
         "//common/util:tree-operations",
         "//common/util:vector-tree",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -196,7 +223,9 @@ cc_library(
         ":format-token",
         ":token-partition-tree",
         ":unwrapped-line",
+        "//common/util:logging",
         "//common/util:tree-operations",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -205,15 +234,21 @@ cc_test(
     name = "token-partition-tree_test",
     srcs = ["token_partition_tree_test.cc"],
     deps = [
+        ":basic-format-style",
         ":format-token",
         ":token-partition-tree",
         ":token-partition-tree-test-utils",
         ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/strings:position",
+        "//common/text:token-info",
         "//common/util:container-iterator-range",
+        "//common/util:logging",
         "//common/util:tree-operations",
         "//common/util:vector-tree",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -228,8 +263,11 @@ cc_library(
         ":format-token",
         "//common/strings:display-utils",
         "//common/text:symbol",
+        "//common/text:token-info",
         "//common/text:tree-utils",
         "//common/util:container-iterator-range",
+        "//common/util:iterator-range",
+        "//common/util:logging",
         "//common/util:spacer",
         "@com_google_absl//absl/strings",
     ],
@@ -243,8 +281,9 @@ cc_library(
     deps = [
         ":format-token",
         ":unwrapped-line",
+        "//common/text:constants",
         "//common/text:token-info",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -255,8 +294,12 @@ cc_test(
         ":format-token",
         ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/text:symbol",
+        "//common/text:token-info",
         "//common/text:tree-builder-test-util",
         "//common/util:container-iterator-range",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -273,7 +316,6 @@ cc_library(
         "//common/text:symbol",
         "//common/text:syntax-tree-context",
         "//common/text:token-info",
-        "//common/text:token-stream-view",
         "//common/text:tree-context-visitor",
     ],
 )
@@ -285,9 +327,13 @@ cc_test(
         ":format-token",
         ":tree-annotator",
         "//common/text:constants",
+        "//common/text:syntax-tree-context",
         "//common/text:token-info",
         "//common/text:tree-builder-test-util",
         "//common/util:iterator-range",
+        "//common/util:logging",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -313,6 +359,7 @@ cc_library(
         "//common/util:tree-operations",
         "//common/util:value-saver",
         "//common/util:vector-tree",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -332,6 +379,8 @@ cc_test(
         "//common/util:container-iterator-range",
         "//common/util:range",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -347,13 +396,12 @@ cc_library(
         ":format-token",
         ":unwrapped-line",
         "//common/strings:position",
-        "//common/strings:range",
         "//common/text:token-info",
         "//common/util:container-iterator-range",
         "//common/util:iterator-adaptors",
         "//common/util:iterator-range",
         "//common/util:logging",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -369,7 +417,6 @@ cc_library(
         "//common/text:token-info",
         "//common/util:logging",
         "//common/util:spacer",
-        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -382,9 +429,10 @@ cc_test(
         ":state-node",
         ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/text:token-info",
         "//common/util:logging",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -398,7 +446,9 @@ cc_test(
         ":line-wrap-searcher",
         ":unwrapped-line",
         ":unwrapped-line-test-utils",
+        "//common/text:token-info",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -412,6 +462,7 @@ cc_library(
         "//common/strings:position",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -420,7 +471,10 @@ cc_test(
     srcs = ["verification_test.cc"],
     deps = [
         ":verification",
+        "//common/strings:position",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )

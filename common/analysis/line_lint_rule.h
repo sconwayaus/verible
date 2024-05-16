@@ -19,8 +19,6 @@
 #ifndef VERIBLE_COMMON_ANALYSIS_LINE_LINT_RULE_H_
 #define VERIBLE_COMMON_ANALYSIS_LINE_LINT_RULE_H_
 
-#include <cstddef>
-
 #include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule.h"
 
@@ -28,7 +26,7 @@ namespace verible {
 
 class LineLintRule : public LintRule {
  public:
-  ~LineLintRule() override = default;
+  ~LineLintRule() override = default;  // not yet final
 
   // Scans a single line during analysis.
   virtual void HandleLine(absl::string_view line) = 0;

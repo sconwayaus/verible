@@ -22,7 +22,6 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <sstream>  // IWYU pragma: keep  // for ostringstream
 #include <string>   // for string, allocator, etc
@@ -33,18 +32,16 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"  // for MakeArraySlice
-#include "common/strings/compare.h"
 #include "common/strings/mem_block.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/parser_verifier.h"
 #include "common/text/text_structure.h"
 #include "common/text/token_info.h"
 #include "common/text/token_info_json.h"
-#include "common/util/bijective_map.h"
 #include "common/util/enum_flags.h"
 #include "common/util/file_util.h"
 #include "common/util/init_command_line.h"
+#include "common/util/iterator_range.h"
 #include "common/util/logging.h"  // for operator<<, LOG, LogMessage, etc
 #include "nlohmann/json.hpp"
 #include "verilog/CST/verilog_tree_json.h"
@@ -55,6 +52,7 @@
 #include "verilog/parser/verilog_parser.h"
 #include "verilog/parser/verilog_token.h"
 #include "verilog/parser/verilog_token_classifications.h"
+#include "verilog/parser/verilog_token_enum.h"
 
 // Controls parser selection behavior
 enum class LanguageMode {

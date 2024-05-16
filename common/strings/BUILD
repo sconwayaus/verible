@@ -5,14 +5,13 @@ package(
     default_visibility = [
         "//:__subpackages__",
     ],
+    features = ["layering_check"],
 )
 
 cc_library(
     name = "compare",
     hdrs = ["compare.h"],
-    deps = [
-        "@com_google_absl//absl/strings",
-    ],
+    deps = ["@com_google_absl//absl/strings:string_view"],
 )
 
 cc_test(
@@ -20,6 +19,8 @@ cc_test(
     srcs = ["compare_test.cc"],
     deps = [
         ":compare",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -32,6 +33,7 @@ cc_library(
         "//common/util:logging",
         "//common/util:range",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -41,7 +43,8 @@ cc_test(
     deps = [
         ":comment-utils",
         "//common/util:range",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -55,7 +58,7 @@ cc_library(
         ":split",
         "//common/util:iterator-range",
         "//external_libs:editscript",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -64,7 +67,10 @@ cc_test(
     srcs = ["diff_test.cc"],
     deps = [
         ":diff",
-        "@com_google_absl//absl/strings",
+        ":position",
+        "//external_libs:editscript",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -75,6 +81,7 @@ cc_library(
     hdrs = ["display_utils.h"],
     deps = [
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -83,6 +90,8 @@ cc_test(
     srcs = ["display_utils_test.cc"],
     deps = [
         ":display-utils",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -97,6 +106,7 @@ cc_library(
         "//common/util:logging",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -108,6 +118,9 @@ cc_test(
         ":random",
         "//common/util:bijective-map",
         "//common/util:logging",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -115,16 +128,17 @@ cc_test(
 cc_library(
     name = "mem-block",
     hdrs = ["mem_block.h"],
-    deps = [
-        "@com_google_absl//absl/strings",
-    ],
+    deps = ["@com_google_absl//absl/strings:string_view"],
 )
 
 cc_library(
     name = "naming-utils",
     srcs = ["naming_utils.cc"],
     hdrs = ["naming_utils.h"],
-    deps = ["@com_google_absl//absl/strings"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+    ],
 )
 
 cc_test(
@@ -132,6 +146,7 @@ cc_test(
     srcs = ["naming_utils_test.cc"],
     deps = [
         ":naming-utils",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -156,6 +171,7 @@ cc_library(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -164,9 +180,12 @@ cc_test(
     srcs = ["patch_test.cc"],
     deps = [
         ":patch",
+        ":position",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -176,8 +195,9 @@ cc_library(
     srcs = ["position.cc"],
     hdrs = ["position.h"],
     deps = [
+        "//common/util:interval",
         "//common/util:interval-set",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -186,6 +206,8 @@ cc_test(
     srcs = ["position_test.cc"],
     deps = [
         ":position",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -196,9 +218,9 @@ cc_library(
     hdrs = ["random.h"],
     deps = [
         "//common/util:interval-set",
+        "//common/util:iterator-range",
         "//common/util:logging",
-        "//common/util:range",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -207,6 +229,7 @@ cc_test(
     srcs = ["random_test.cc"],
     deps = [
         ":random",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -218,7 +241,7 @@ cc_library(
     deps = [
         "//common/util:logging",
         "//common/util:range",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -228,6 +251,8 @@ cc_test(
     deps = [
         ":range",
         "//common/util:range",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -238,6 +263,7 @@ cc_library(
     hdrs = ["split.h"],
     deps = [
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -248,6 +274,8 @@ cc_test(
         ":range",
         ":split",
         "//common/util:range",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -258,7 +286,7 @@ cc_library(
     hdrs = ["rebase.h"],
     deps = [
         "//common/util:logging",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -268,8 +296,8 @@ cc_test(
     deps = [
         ":rebase",
         "//common/util:range",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -277,9 +305,7 @@ cc_test(
 cc_library(
     name = "utf8",
     hdrs = ["utf8.h"],
-    deps = [
-        "@com_google_absl//absl/strings",
-    ],
+    deps = ["@com_google_absl//absl/strings:string_view"],
 )
 
 cc_library(
@@ -295,7 +321,7 @@ cc_library(
     ],
     deps = [
         ":utf8",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -304,6 +330,7 @@ cc_test(
     srcs = ["utf8_test.cc"],
     deps = [
         ":utf8",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -314,6 +341,8 @@ cc_test(
     deps = [
         ":line-column-map",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -326,7 +355,7 @@ cc_library(
         "//common/util:interval-map",
         "//common/util:interval-set",
         "//common/util:logging",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -336,8 +365,10 @@ cc_test(
     deps = [
         ":range",
         ":string-memory-map",
+        "//common/util:logging",
         "//common/util:range",
-        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )

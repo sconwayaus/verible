@@ -20,7 +20,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -34,7 +33,7 @@ ABSL_FLAG(std::string, output, "",
           "Name of the output file. If empty, output is written to stdout");
 ABSL_FLAG(std::string, class_namespace, "",
           "Namespace of the generated structs");
-ABSL_FLAG(std::string, json_header, "<nlohmann/json.hpp>",
+ABSL_FLAG(std::string, json_header, "\"nlohmann/json.hpp\"",
           "Include path to json.hpp including brackets <> or quotes \"\" "
           "around.");
 

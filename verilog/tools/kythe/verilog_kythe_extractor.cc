@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <deque>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -23,15 +21,15 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/strings/substitute.h"
-#include "common/util/bijective_map.h"
 #include "common/util/enum_flags.h"
-#include "common/util/file_util.h"
 #include "common/util/init_command_line.h"
-#include "common/util/tree_operations.h"
-#include "verilog/analysis/verilog_analyzer.h"
+#include "common/util/logging.h"
+#include "common/util/tree_operations.h"  // IWYU pragma: keep
+#include "verilog/analysis/verilog_filelist.h"
 #include "verilog/analysis/verilog_project.h"
+#include "verilog/tools/kythe/indexing_facts_tree.h"
 #include "verilog/tools/kythe/indexing_facts_tree_extractor.h"
+#include "verilog/tools/kythe/kythe_facts.h"
 #include "verilog/tools/kythe/kythe_facts_extractor.h"
 #include "verilog/tools/kythe/kythe_proto_output.h"
 
@@ -211,7 +209,7 @@ Output: Produces Indexing Facts for kythe (http://kythe.io).
                            file_list.preprocessing.include_dirs.end());
   verilog::VerilogProject project(file_list_root, include_dir_paths,
                                   absl::GetFlag(FLAGS_verilog_project_name),
-                                  /*populate_string_maps=*/false);
+                                  /*provide_lookup_file_origin=*/false);
 
   const std::vector<absl::Status> errors(
       verilog::kythe::ExtractTranslationUnits(file_list_path, &project,

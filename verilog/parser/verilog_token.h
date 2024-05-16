@@ -15,8 +15,9 @@
 #ifndef VERIBLE_VERILOG_TOKEN_VERILOG_TOKEN_H_
 #define VERIBLE_VERILOG_TOKEN_VERILOG_TOKEN_H_
 
+#include <cstddef>
+
 #include "absl/strings/string_view.h"
-#include "verilog/parser/verilog_token_enum.h"
 
 namespace verilog {
 

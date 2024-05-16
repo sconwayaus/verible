@@ -15,22 +15,24 @@
 #include "verilog/analysis/checkers/unpacked_dimensions_rule.h"
 
 #include <set>
-#include <string>
 
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/matcher/bound_symbol_manager.h"
 #include "common/analysis/matcher/matcher.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"
+#include "common/text/token_info.h"
+#include "common/text/tree_utils.h"
 #include "common/util/logging.h"
 #include "verilog/CST/context_functions.h"
 #include "verilog/CST/dimensions.h"
 #include "verilog/CST/expression.h"
 #include "verilog/CST/verilog_matchers.h"
+#include "verilog/CST/verilog_nonterminals.h"
 #include "verilog/analysis/descriptions.h"
 #include "verilog/analysis/lint_rule_registry.h"
+#include "verilog/parser/verilog_token_enum.h"
 
 namespace verilog {
 namespace analysis {

@@ -15,16 +15,14 @@
 #ifndef VERIBLE_COMMON_ANALYSIS_SYNTAX_TREE_SEARCH_TEST_UTILS_H_
 #define VERIBLE_COMMON_ANALYSIS_SYNTAX_TREE_SEARCH_TEST_UTILS_H_
 
-#include <functional>
 #include <initializer_list>
 #include <iosfwd>
-#include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "common/analysis/syntax_tree_search.h"
 #include "common/lexer/lexer_test_util.h"
-#include "gtest/gtest.h"
+#include "common/text/token_info_test_util.h"
 
 namespace verible {
 

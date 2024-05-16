@@ -14,17 +14,27 @@
 
 #include "verilog/tools/ls/verilog-language-server.h"
 
-#include <functional>
+#include <cstdio>
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "common/lsp/lsp-file-utils.h"
 #include "common/lsp/lsp-protocol.h"
 #include "common/util/file_util.h"
 #include "common/util/init_command_line.h"
+#include "common/util/logging.h"
+#include "nlohmann/json.hpp"
+#include "verilog/analysis/verilog_project.h"
+#include "verilog/tools/ls/hover.h"
+#include "verilog/tools/ls/lsp-parse-buffer.h"
+#include "verilog/tools/ls/symbol-table-handler.h"
 #include "verilog/tools/ls/verible-lsp-adapter.h"
 
 ABSL_FLAG(bool, variables_in_outline, true,
@@ -76,7 +86,10 @@ verible::lsp::InitializeResult VerilogLanguageServer::GetCapabilities() {
       {"documentHighlightProvider", true},        // Highlight same symbol
       {"definitionProvider", true},               // Provide going to definition
       {"referencesProvider", true},               // Provide going to references
-      {"diagnosticProvider",                      // Pull model of diagnostics.
+      // Hover enabled, but not yet offered to client until tested.
+      {"hoverProvider", false},  // Hover info over cursor
+      {"renameProvider", true},  // Provide symbol renaming
+      {"diagnosticProvider",     // Pull model of diagnostics.
        {
            {"interFileDependencies", false},
            {"workspaceDiagnostics", false},
@@ -148,6 +161,24 @@ void VerilogLanguageServer::SetRequestHandlers() {
         return symbol_table_handler_.FindReferencesLocations(p,
                                                              parsed_buffers_);
       });
+  dispatcher_.AddRequestHandler(
+      "textDocument/prepareRename",
+      [this](const verible::lsp::PrepareRenameParams &p) -> nlohmann::json {
+        auto range = symbol_table_handler_.FindRenameableRangeAtCursor(
+            p, parsed_buffers_);
+        if (range.has_value()) return range.value();
+        return nullptr;
+      });
+  dispatcher_.AddRequestHandler(
+      "textDocument/rename", [this](const verible::lsp::RenameParams &p) {
+        return symbol_table_handler_.FindRenameLocationsAndCreateEdits(
+            p, parsed_buffers_);
+      });
+  dispatcher_.AddRequestHandler(
+      "textDocument/hover", [this](const verible::lsp::HoverParams &p) {
+        return CreateHoverInformation(&symbol_table_handler_, parsed_buffers_,
+                                      p);
+      });
   // The client sends a request to shut down. Use that to exit our loop.
   dispatcher_.AddRequestHandler("shutdown", [this](const nlohmann::json &) {
     shutdown_requested_ = true;
@@ -185,7 +216,9 @@ void VerilogLanguageServer::PrintStatistics() const {
 verible::lsp::InitializeResult VerilogLanguageServer::InitializeRequestHandler(
     const verible::lsp::InitializeParams &p) {
   // set VerilogProject for the symbol table, if possible
-  if (!p.rootUri.empty()) {
+  if (const char *override_path = getenv("VERIBLE_LS_PROJECTROOT_OVERRIDE")) {
+    ConfigureProject(override_path);
+  } else if (!p.rootUri.empty()) {
     std::string path = verible::lsp::LSPUriToPath(p.rootUri);
     if (path.empty()) {
       LOG(ERROR) << "Unsupported rootUri in initialize request:  " << p.rootUri
@@ -204,6 +237,7 @@ verible::lsp::InitializeResult VerilogLanguageServer::InitializeRequestHandler(
 }
 
 void VerilogLanguageServer::ConfigureProject(absl::string_view project_root) {
+  LOG(INFO) << "Initializing with project-root '" << project_root << "'";
   std::string proj_root = {project_root.begin(), project_root.end()};
   if (proj_root.empty()) {
     proj_root = std::string(verible::file::Dirname(FindFileList(".")));
@@ -215,11 +249,9 @@ void VerilogLanguageServer::ConfigureProject(absl::string_view project_root) {
       proj_root, std::vector<std::string>(), "");
   symbol_table_handler_.SetProject(proj);
 
+  // Whenever an updated buffer in editor is available, update symbol table.
   parsed_buffers_.AddChangeListener(
-      [this](const std::string &uri,
-             const verilog::BufferTracker *buffer_tracker) {
-        UpdateEditedFileInProject(uri, buffer_tracker);
-      });
+      symbol_table_handler_.CreateBufferTrackerListener());
 }
 
 void VerilogLanguageServer::SendDiagnostics(
@@ -238,23 +270,6 @@ void VerilogLanguageServer::SendDiagnostics(
   params.diagnostics =
       verilog::CreateDiagnostics(buffer_tracker, kDiagnosticLimit);
   dispatcher_.SendNotification("textDocument/publishDiagnostics", params);
-}
-
-void VerilogLanguageServer::UpdateEditedFileInProject(
-    const std::string &uri, const verilog::BufferTracker *buffer_tracker) {
-  const std::string path = verible::lsp::LSPUriToPath(uri);
-  if (path.empty()) {
-    LOG(ERROR) << "Could not convert LS URI to path:  " << uri;
-    return;
-  }
-  if (!buffer_tracker) {
-    symbol_table_handler_.UpdateFileContent(path, nullptr);
-    return;
-  }
-  if (!buffer_tracker->last_good()) return;
-  symbol_table_handler_.UpdateFileContent(
-      path, &buffer_tracker->last_good()->parser().Data());
-  VLOG(1) << "Updated file:  " << uri << " (" << path << ")";
 }
 
 };  // namespace verilog

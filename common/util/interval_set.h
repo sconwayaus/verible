@@ -15,8 +15,11 @@
 #ifndef VERIBLE_COMMON_UTIL_INTERVAL_SET_H_
 #define VERIBLE_COMMON_UTIL_INTERVAL_SET_H_
 
+#include <cstddef>
+#include <functional>
 #include <initializer_list>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <sstream>
 #include <string>
@@ -27,6 +30,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "common/util/auto_iterator.h"
 #include "common/util/interval.h"
 #include "common/util/iterator_range.h"
@@ -188,7 +192,9 @@ class IntervalSet : private internal::IntervalSetImpl {
   // Remove all intervals from the set.
   void clear() { intervals_.clear(); }
 
-  void swap(IntervalSet<T> &other) { intervals_.swap(other.intervals_); }
+  void swap(IntervalSet<T> &other) noexcept {
+    intervals_.swap(other.intervals_);
+  }
 
   bool operator==(const IntervalSet<T> &other) const {
     return intervals_ == other.intervals_;
@@ -518,7 +524,7 @@ class IntervalSet : private internal::IntervalSetImpl {
 };  // class IntervalSet
 
 template <typename T>
-void swap(IntervalSet<T> &t1, IntervalSet<T> &t2) {
+void swap(IntervalSet<T> &t1, IntervalSet<T> &t2) noexcept {
   t1.swap(t2);
 }
 
@@ -624,6 +630,9 @@ class DisjointIntervalSet : private internal::IntervalSetImpl {
     }
     return p;
   }
+
+  // Erase given interval.
+  const_iterator erase(const_iterator pos) { return intervals_.erase(pos); }
 
   // Same as emplace(), but fails fatally if emplacement fails,
   // and only returns the iterator to the new map entry (which should have

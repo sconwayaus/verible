@@ -19,14 +19,13 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "common/analysis/syntax_tree_search_test_utils.h"
-#include "common/text/concrete_syntax_tree.h"
 #include "common/util/file_util.h"
 #include "common/util/logging.h"
-#include "common/util/range.h"
 #include "common/util/tree_operations.h"
 #include "gtest/gtest.h"
-#include "verilog/analysis/verilog_analyzer.h"
 #include "verilog/analysis/verilog_project.h"
 #include "verilog/tools/kythe/indexing_facts_tree.h"
 #include "verilog/tools/kythe/verilog_extractor_indexing_fact_type.h"
@@ -101,7 +100,7 @@ class SimpleTestProject : public TempDir, public VerilogProject {
   explicit SimpleTestProject(absl::string_view code_text,
                              const std::vector<std::string> &include_paths = {})
       : VerilogProject(temp_dir_, include_paths, /*corpus=*/"unittest",
-                       /*populate_string_maps=*/false),
+                       /*provide_lookup_file_origin=*/false),
         code_text_(code_text),
         translation_unit_(code_text, temp_dir_,
                           [this](absl::string_view full_file_name)

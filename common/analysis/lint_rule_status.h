@@ -17,8 +17,8 @@
 #ifndef VERIBLE_COMMON_ANALYSIS_LINT_RULE_STATUS_H_
 #define VERIBLE_COMMON_ANALYSIS_LINT_RULE_STATUS_H_
 
-#include <fstream>
 #include <functional>
+#include <initializer_list>
 #include <iosfwd>
 #include <set>
 #include <string>

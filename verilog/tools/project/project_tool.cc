@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -23,6 +22,7 @@
 #include "absl/flags/usage.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "common/util/init_command_line.h"
 #include "common/util/logging.h"
@@ -30,6 +30,7 @@
 #include "common/util/subcommand.h"
 #include "verilog/analysis/dependencies.h"
 #include "verilog/analysis/symbol_table.h"
+#include "verilog/analysis/verilog_filelist.h"
 #include "verilog/analysis/verilog_project.h"
 
 // Note: These flags were copied over from

@@ -23,8 +23,11 @@
 #include <vector>
 
 #include "common/analysis/syntax_tree_search.h"
+#include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
+#include "common/text/symbol_ptr.h"  // IWYU pragma: export
+#include "common/text/token_info.h"
 #include "common/text/tree_utils.h"
 #include "verilog/CST/verilog_nonterminals.h"
 

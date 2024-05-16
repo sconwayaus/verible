@@ -16,8 +16,8 @@
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_MODULE_FILENAME_RULE_H_
 
 #include <set>
-#include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/text_structure_lint_rule.h"

@@ -18,10 +18,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <sstream>  // IWYU pragma: keep  // for ostringstream
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -30,6 +30,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "common/strings/line_column_map.h"
+#include "common/strings/mem_block.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
@@ -431,8 +432,11 @@ absl::Status TextStructureView::InternalConsistencyCheck() const {
   return SyntaxTreeConsistencyCheck();
 }
 
-// TokenRange can be a container reference or iterator range.
-// TokenViewRange can be a container reference or iterator range.
+// "token_source" is a sequence of tokens.
+// The TokenRange can be a container reference or iterator range.
+//
+// "view_source" is a sequence of iterators pointing to token_source content.
+// The TokenViewRange can be a container reference or iterator range.
 template <typename TokenRange, typename TokenViewRange>
 static void CopyTokensAndView(TokenSequence* destination,
                               std::vector<int>* view_indices,
@@ -440,8 +444,15 @@ static void CopyTokensAndView(TokenSequence* destination,
                               const TokenViewRange& view_source) {
   // Translate token_view's iterators into array indices, adjusting for the
   // number of pre-existing tokens.
+  const auto pre_existing_start_index = destination->size();
   for (const auto& token_iter : view_source) {
-    view_indices->push_back(destination->size() +
+    // TODO: something is wrong here, the view should never have iterators
+    // pointing outside the range of the source. Needs to be explored.
+#if 0
+    CHECK(token_iter >= token_source.begin() &&
+          token_iter < token_source.end());
+#endif
+    view_indices->push_back(pre_existing_start_index +
                             std::distance(token_source.begin(), token_iter));
   }
   // Copy tokens up to this expansion point.

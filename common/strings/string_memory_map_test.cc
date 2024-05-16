@@ -18,10 +18,10 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "common/strings/range.h"
+#include "common/util/logging.h"
 #include "common/util/range.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace verible {
@@ -104,6 +104,28 @@ TEST(StringViewSuperRangeMapTest, TwoStrings) {
   ForAllSubstringRanges(text2, [&svmap, text2](absl::string_view subrange) {
     EXPECT_TRUE(BoundsEqual(svmap.must_find(subrange), text2));
   });
+}
+
+TEST(StringViewSuperRangeMapTest, EraseString) {
+  constexpr absl::string_view text1("onestring");
+  constexpr absl::string_view text2("another");
+  StringViewSuperRangeMap svmap;
+  svmap.must_emplace(text1);
+  svmap.must_emplace(text2);
+
+  auto found = svmap.find(text1);
+  EXPECT_NE(found, svmap.end());
+  svmap.erase(found);
+
+  // should be gone now
+  found = svmap.find(text1);
+  EXPECT_EQ(found, svmap.end());
+
+  found = svmap.find(text2);
+  EXPECT_NE(found, svmap.end());
+  svmap.erase(found);
+
+  EXPECT_TRUE(svmap.empty());
 }
 
 // Function to get the owned address range of the underlying string.

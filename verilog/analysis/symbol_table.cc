@@ -15,6 +15,8 @@
 #include "verilog/analysis/symbol_table.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -24,17 +26,22 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "common/strings/display_utils.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/token_info.h"
+#include "common/text/tree_compare.h"
 #include "common/text/tree_context_visitor.h"
 #include "common/text/tree_utils.h"
 #include "common/text/visitors.h"
+#include "common/util/casts.h"
 #include "common/util/enum_flags.h"
 #include "common/util/logging.h"
 #include "common/util/spacer.h"
@@ -100,7 +107,7 @@ std::ostream& operator<<(std::ostream& stream, SymbolMetaType symbol_type) {
   return SymbolMetaTypeNames().Unparse(symbol_type, stream);
 }
 
-static absl::string_view SymbolMetaTypeAsString(SymbolMetaType type) {
+absl::string_view SymbolMetaTypeAsString(SymbolMetaType type) {
   return SymbolMetaTypeNames().EnumName(type);
 }
 

@@ -18,9 +18,10 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "common/analysis/lint_waiver.h"
 #include "common/lexer/token_stream_adapter.h"
 #include "common/text/token_info.h"
+#include "common/text/token_stream_view.h"
+#include "common/util/iterator_range.h"
 #include "common/util/logging.h"
 
 namespace verible {
@@ -42,6 +43,8 @@ CommandFileLexer::CommandFileLexer(absl::string_view config)
       case ConfigToken::kFlagWithArg:
         // Skip -- prefix and = suffix
         t.set_text(t.text().substr(2, t.text().length() - 3));
+        break;
+      default:
         break;
     }
   }

@@ -17,7 +17,6 @@
 
 #include <memory>
 #include <set>
-#include <string>
 
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/syntax_tree_lint_rule.h"

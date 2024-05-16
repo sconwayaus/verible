@@ -17,10 +17,12 @@
 #include <initializer_list>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "common/lexer/lexer.h"
 #include "common/lexer/lexer_test_util.h"
+#include "common/text/constants.h"
 #include "common/text/token_info.h"
-#include "gmock/gmock.h"
+#include "common/text/token_stream_view.h"
 #include "gtest/gtest.h"
 
 namespace verible {
@@ -36,7 +38,9 @@ class FakeTokenSequenceLexer : public Lexer, public FakeLexer {
 
   void Restart(absl::string_view) final {}
 
-  bool TokenIsError(const TokenInfo &) const override { return false; }
+  bool TokenIsError(const TokenInfo &) const override {  // not yet final.
+    return false;
+  }
 };
 
 TEST(MakeTokenGeneratorTest, Generate) {

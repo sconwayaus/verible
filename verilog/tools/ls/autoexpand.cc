@@ -16,6 +16,7 @@
 #include "verilog/tools/ls/autoexpand.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iterator>
@@ -31,19 +32,34 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "common/analysis/syntax_tree_search.h"
+#include "common/lsp/lsp-protocol.h"
+#include "common/strings/line_column_map.h"
+#include "common/strings/position.h"
+#include "common/text/symbol.h"
 #include "common/text/text_structure.h"
+#include "common/text/token_info.h"
+#include "common/text/tree_utils.h"
+#include "common/util/logging.h"
 #include "re2/re2.h"
 #include "verilog/CST/declaration.h"
 #include "verilog/CST/dimensions.h"
-#include "verilog/CST/expression.h"
-#include "verilog/CST/identifier.h"
 #include "verilog/CST/module.h"
 #include "verilog/CST/net.h"
 #include "verilog/CST/port.h"
 #include "verilog/CST/type.h"
 #include "verilog/CST/verilog_matchers.h"  // IWYU pragma: keep
+#include "verilog/CST/verilog_nonterminals.h"
+#include "verilog/analysis/verilog_analyzer.h"
+#include "verilog/formatting/format_style.h"
 #include "verilog/formatting/format_style_init.h"
 #include "verilog/formatting/formatter.h"
+#include "verilog/tools/ls/lsp-parse-buffer.h"
+#include "verilog/tools/ls/symbol-table-handler.h"
 
 namespace verilog {
 using verible::FindLastSubtree;
@@ -267,6 +283,7 @@ class AutoExpander {
 
     // Returns true if the module depends on (uses) a given module
     bool DependsOn(const Module *module) const {
+      if (this == module) return false;
       absl::flat_hash_set<const Module *> visited;
       return DependsOn(module, &visited);
     }
@@ -1036,12 +1053,11 @@ void AutoExpander::Module::PutDeclaredPort(const SyntaxTreeNode &port_node) {
 
 bool AutoExpander::Module::DependsOn(
     const Module *module, absl::flat_hash_set<const Module *> *visited) const {
-  visited->insert(this);
+  const bool already_visited = !visited->insert(this).second;
+  if (already_visited) return false;
   for (const Module *dependency : dependencies_) {
     if (dependency == module) return true;
-    if (!visited->contains(dependency)) {
-      if (dependency->DependsOn(module, visited)) return true;
-    }
+    if (dependency->DependsOn(module, visited)) return true;
   }
   return false;
 }

@@ -25,6 +25,8 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -40,6 +42,7 @@
 #include "common/util/logging.h"
 #include "common/util/status_macros.h"
 #include "verilog/analysis/default_rules.h"
+#include "verilog/analysis/descriptions.h"
 #include "verilog/analysis/lint_rule_registry.h"
 
 namespace verilog {
@@ -155,6 +158,17 @@ bool RuleBundle::ParseConfiguration(absl::string_view text, char separator,
       parsed_correctly = false;
       continue;
     }
+
+    // If we are about to override a rule which was previously configured in the
+    // same configuration file, warn the user about it.
+    // NOTE: ignore producing a warning if there is no configuration, just
+    // disabing/enabling
+    if (!setting.configuration.empty() && rules.count(*rule_iter)) {
+      absl::StrAppend(error, error->empty() ? "" : "\n", kRepeatedFlagMessage,
+                      " \"", rule_name, "\" = ", setting.configuration);
+      parsed_correctly = false;
+    }
+
     // Map keys must use canonical registered string_views for guaranteed
     // lifetime, not just any string-equivalent copy.
     rules[*rule_iter] = setting;
@@ -164,7 +178,8 @@ bool RuleBundle::ParseConfiguration(absl::string_view text, char separator,
 }
 
 // Parse and unparse for RuleBundle (for commandlineflags)
-std::string RuleBundle::UnparseConfiguration(const char separator) const {
+std::string RuleBundle::UnparseConfiguration(const char separator,
+                                             const bool reverse) const {
   std::vector<std::string> switches;
   switches.reserve(rules.size());
   for (const auto &rule : rules) {
@@ -176,7 +191,12 @@ std::string RuleBundle::UnparseConfiguration(const char separator) const {
         rule.second.configuration));
   }
   // Concatenates all of rules into text.
-  return absl::StrJoin(switches.rbegin(), switches.rend(),
+  if (reverse) {
+    return absl::StrJoin(switches.rbegin(), switches.rend(),
+                         std::string(1, separator));
+  }
+
+  return absl::StrJoin(switches.begin(), switches.end(),
                        std::string(1, separator));
 }
 
@@ -248,6 +268,10 @@ std::set<analysis::LintRuleId> LinterConfiguration::ActiveRuleIds() const {
   return result;
 }
 
+void LinterConfiguration::GetRuleBundle(RuleBundle *rule_bundle) const {
+  rule_bundle->rules = configuration_;
+}
+
 // Iterates through all rules that are mentioned and enabled
 // in the "config" map. Constructs instances using the
 // "factory"-function, and configures them if a configuration string is
@@ -269,7 +293,9 @@ static absl::StatusOr<std::vector<std::unique_ptr<T>>> CreateRules(
     if (!setting.configuration.empty()) {
       if (absl::Status status = rule_ptr->Configure(setting.configuration);
           !status.ok()) {
-        return status;
+        std::string error_msg =
+            absl::StrCat(rule_pair.first, " ", status.message());
+        return absl::InvalidArgumentError(error_msg);
       }
     }
 
@@ -320,8 +346,9 @@ absl::Status LinterConfiguration::AppendFromFile(
     // Log warnings and errors
     if (!error.empty()) {
       std::cerr << "Using a partial version from " << config_filename
-                << ". Found the following issues: " << error;
+                << ". Found the following issues: " << error << "\n";
     }
+
     UseRuleBundle(local_rules_bundle);
     return absl::OkStatus();
   }

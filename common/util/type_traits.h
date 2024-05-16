@@ -15,7 +15,7 @@
 #ifndef VERIBLE_COMMON_UTIL_TYPE_TRAITS_H_
 #define VERIBLE_COMMON_UTIL_TYPE_TRAITS_H_
 
-#include <type_traits>  // for std::conditional, std::is_const
+#include <type_traits>  // IWYU pragma: export
 
 namespace verible {
 
@@ -41,9 +41,8 @@ namespace verible {
 //
 // Usage: match_const<T, Other>::type
 template <class T, class Other>
-using match_const =
-    typename std::conditional<std::is_const<Other>::value, std::add_const<T>,
-                              std::remove_const<T>>::type;
+using match_const = std::conditional_t<std::is_const_v<Other>,
+                                       std::add_const<T>, std::remove_const<T>>;
 
 template <class T, class Other>
 using match_const_t = typename match_const<T, Other>::type;

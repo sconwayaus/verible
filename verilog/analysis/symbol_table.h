@@ -15,6 +15,7 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_SYMBOL_TABLE_H_
 #define VERIBLE_VERILOG_ANALYSIS_SYMBOL_TABLE_H_
 
+#include <cstddef>
 #include <functional>
 #include <iosfwd>
 #include <map>
@@ -25,6 +26,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "common/strings/compare.h"
 #include "common/text/symbol.h"
@@ -71,6 +73,8 @@ enum class SymbolMetaType {
 };
 
 std::ostream& operator<<(std::ostream&, SymbolMetaType);
+
+absl::string_view SymbolMetaTypeAsString(SymbolMetaType type);
 
 // This classifies the type of reference that a single identifier is.
 enum class ReferenceType {

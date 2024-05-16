@@ -14,7 +14,6 @@
 
 #include "verilog/CST/verilog_treebuilder_utils.h"
 
-#include <memory>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -24,7 +23,6 @@
 #include "common/text/symbol.h"
 #include "common/text/token_info.h"
 #include "common/util/logging.h"
-#include "verilog/CST/verilog_nonterminals.h"
 
 namespace verilog {
 

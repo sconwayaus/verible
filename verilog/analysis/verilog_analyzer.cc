@@ -17,15 +17,11 @@
 
 #include "verilog/analysis/verilog_analyzer.h"
 
-#include <algorithm>
-#include <cstddef>
-#include <iterator>
 #include <memory>
 #include <ostream>
-#include <string>
-#include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -33,6 +29,7 @@
 #include "common/analysis/file_analyzer.h"
 #include "common/lexer/token_stream_adapter.h"
 #include "common/strings/comment_utils.h"
+#include "common/strings/mem_block.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"

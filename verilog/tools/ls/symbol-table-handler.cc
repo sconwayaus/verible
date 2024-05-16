@@ -15,21 +15,39 @@
 
 #include "verilog/tools/ls/symbol-table-handler.h"
 
+#include <algorithm>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "common/lsp/lsp-file-utils.h"
+#include "common/lsp/lsp-protocol.h"
 #include "common/strings/line_column_map.h"
+#include "common/text/symbol.h"
+#include "common/text/text_structure.h"
+#include "common/text/token_info.h"
 #include "common/util/file_util.h"
+#include "common/util/iterator_adaptors.h"
+#include "common/util/logging.h"
 #include "common/util/range.h"
+#include "verilog/analysis/symbol_table.h"
+#include "verilog/analysis/verilog_analyzer.h"
 #include "verilog/analysis/verilog_filelist.h"
+#include "verilog/analysis/verilog_project.h"
 #include "verilog/tools/ls/lsp-conversion.h"
+#include "verilog/tools/ls/lsp-parse-buffer.h"
 
 ABSL_FLAG(std::string, file_list_path, "verible.filelist",
           "Name of the file with Verible FileList for the project");
@@ -42,16 +60,31 @@ namespace verilog {
 // If vlog(2), output all non-ok messages, with vlog(1) just the first few,
 // else: none
 static void LogFullIfVLog(const std::vector<absl::Status> &statuses) {
-  if (VLOG_IS_ON(1)) {
-    int report_count = 0;
-    for (const auto &s : statuses) {
-      if (s.ok()) continue;
+  if (!VLOG_IS_ON(1)) return;
+
+  constexpr int kMaxEmitNoisyMessagesDirectly = 5;
+  int report_count = 0;
+  absl::flat_hash_map<std::string, int> status_counts;
+  for (const auto &s : statuses) {
+    if (s.ok()) continue;
+    if (++report_count <= kMaxEmitNoisyMessagesDirectly || VLOG_IS_ON(2)) {
       LOG(INFO) << s;
-      if (++report_count > 5 && !VLOG_IS_ON(2)) {
-        LOG(WARNING) << "skipped remaining messages; switch VLOG(2) on for "
-                     << statuses.size() << " statuses";
-        break;  // only more noisy on request.
-      }
+    } else {
+      const std::string partial_msg(s.ToString().substr(0, 25));
+      ++status_counts[partial_msg];
+    }
+  }
+
+  if (!status_counts.empty()) {
+    LOG(WARNING) << "skipped remaining; switch VLOG(2) on for all "
+                 << statuses.size() << " statuses.";
+    LOG(INFO) << "Here a summary";
+    std::map<int, absl::string_view> sort_by_count;
+    for (const auto &stat : status_counts) {
+      sort_by_count.emplace(stat.second, stat.first);
+    }
+    for (const auto &stat : verible::reversed_view(sort_by_count)) {
+      LOG(INFO) << absl::StrFormat("%6d x %s...", stat.first, stat.second);
     }
   }
 }
@@ -129,6 +162,7 @@ bool SymbolTableHandler::LoadProjectFileList(absl::string_view current_dir) {
     }
     filelist_path_ = projectpath;
   }
+
   if (!last_filelist_update_) {
     last_filelist_update_ = std::filesystem::last_write_time(filelist_path_);
   } else if (*last_filelist_update_ ==
@@ -136,6 +170,7 @@ bool SymbolTableHandler::LoadProjectFileList(absl::string_view current_dir) {
     // filelist file is unchanged, keeping it
     return true;
   }
+
   VLOG(1) << "Updating the filelist";
   // fill the FileList object
   FileList filelist;
@@ -148,6 +183,7 @@ bool SymbolTableHandler::LoadProjectFileList(absl::string_view current_dir) {
     last_filelist_update_ = {};
     return false;
   }
+
   // add directory containing filelist to includes
   // TODO (glatosinski): should we do this?
   const absl::string_view filelist_dir = verible::file::Dirname(filelist_path_);
@@ -158,6 +194,7 @@ bool SymbolTableHandler::LoadProjectFileList(absl::string_view current_dir) {
     VLOG(1) << "Adding include path:  " << incdir;
     curr_project_->AddIncludePath(incdir);
   }
+
   // Add files from file list to the project
   VLOG(1) << "Resolving " << filelist.file_paths.size() << " files.";
   int actually_opened = 0;
@@ -175,6 +212,11 @@ bool SymbolTableHandler::LoadProjectFileList(absl::string_view current_dir) {
     }
     ++actually_opened;
   }
+
+  // It could be that we just (re-) opened all the exactly same files, so
+  // setting files_dirty_ here might overstate it. However, good conservative
+  // estimate.
+  files_dirty_ |= (actually_opened > 0);
 
   VLOG(1) << "Successfully opened " << actually_opened
           << " files from file-list: " << (absl::Now() - start);
@@ -228,12 +270,11 @@ const SymbolTableNode *SymbolTableHandler::ScanSymbolTreeForDefinition(
 
 void SymbolTableHandler::Prepare() {
   LoadProjectFileList(curr_project_->TranslationUnitRoot());
-  if (files_dirty_) {
-    BuildProjectSymbolTable();
-  }
+  if (files_dirty_) BuildProjectSymbolTable();
 }
 
-absl::string_view SymbolTableHandler::GetTokenAtTextDocumentPosition(
+std::optional<verible::TokenInfo>
+SymbolTableHandler::GetTokenInfoAtTextDocumentPosition(
     const verible::lsp::TextDocumentPositionParams &params,
     const verilog::BufferTrackerContainer &parsed_buffers) {
   const verilog::BufferTracker *tracker =
@@ -251,11 +292,57 @@ absl::string_view SymbolTableHandler::GetTokenAtTextDocumentPosition(
   const verible::LineColumn cursor{params.position.line,
                                    params.position.character};
   const verible::TextStructureView &text = parsedbuffer->parser().Data();
-
   const verible::TokenInfo cursor_token = text.FindTokenAt(cursor);
-  return cursor_token.text();
+  return cursor_token;
 }
 
+std::optional<verible::TokenInfo>
+SymbolTableHandler::GetTokenAtTextDocumentPosition(
+    const verible::lsp::TextDocumentPositionParams &params,
+    const verilog::BufferTrackerContainer &parsed_buffers) const {
+  const verilog::BufferTracker *tracker =
+      parsed_buffers.FindBufferTrackerOrNull(params.textDocument.uri);
+  if (!tracker) {
+    VLOG(1) << "Could not find buffer with URI " << params.textDocument.uri;
+    return {};
+  }
+  std::shared_ptr<const ParsedBuffer> parsedbuffer = tracker->current();
+  if (!parsedbuffer) {
+    VLOG(1) << "Buffer not found among opened buffers:  "
+            << params.textDocument.uri;
+    return {};
+  }
+  const verible::LineColumn cursor{params.position.line,
+                                   params.position.character};
+  const verible::TextStructureView &text = parsedbuffer->parser().Data();
+
+  return text.FindTokenAt(cursor);
+}
+
+verible::LineColumnRange
+SymbolTableHandler::GetTokenRangeAtTextDocumentPosition(
+    const verible::lsp::TextDocumentPositionParams &document_cursor,
+    const verilog::BufferTrackerContainer &parsed_buffers) {
+  const verilog::BufferTracker *tracker =
+      parsed_buffers.FindBufferTrackerOrNull(document_cursor.textDocument.uri);
+  if (!tracker) {
+    VLOG(1) << "Could not find buffer with URI "
+            << document_cursor.textDocument.uri;
+    return {};
+  }
+  std::shared_ptr<const ParsedBuffer> parsedbuffer = tracker->current();
+  if (!parsedbuffer) {
+    VLOG(1) << "Buffer not found among opened buffers:  "
+            << document_cursor.textDocument.uri;
+    return {};
+  }
+  const verible::LineColumn cursor{document_cursor.position.line,
+                                   document_cursor.position.character};
+  const verible::TextStructureView &text = parsedbuffer->parser().Data();
+
+  const verible::TokenInfo cursor_token = text.FindTokenAt(cursor);
+  return text.GetRangeForToken(cursor_token);
+}
 std::optional<verible::lsp::Location>
 SymbolTableHandler::GetLocationFromSymbolName(
     absl::string_view symbol_name, const VerilogSourceFile *file_origin) {
@@ -275,14 +362,17 @@ SymbolTableHandler::GetLocationFromSymbolName(
 }
 
 std::vector<verible::lsp::Location> SymbolTableHandler::FindDefinitionLocation(
-    const verible::lsp::DefinitionParams &params,
+    const verible::lsp::TextDocumentPositionParams &params,
     const verilog::BufferTrackerContainer &parsed_buffers) {
   // TODO add iterating over multiple definitions
   Prepare();
   const std::string filepath = LSPUriToPath(params.textDocument.uri);
   std::string relativepath = curr_project_->GetRelativePathToSource(filepath);
-  absl::string_view symbol =
+  std::optional<verible::TokenInfo> token =
       GetTokenAtTextDocumentPosition(params, parsed_buffers);
+  if (!token) return {};
+  absl::string_view symbol = token->text();
+
   VLOG(1) << "Looking for symbol:  " << symbol;
   VerilogSourceFile *reffile =
       curr_project_->LookupRegisteredFile(relativepath);
@@ -308,13 +398,15 @@ std::vector<verible::lsp::Location> SymbolTableHandler::FindDefinitionLocation(
   return locations;
 }
 
+const SymbolTableNode *SymbolTableHandler::FindDefinitionNode(
+    absl::string_view symbol) {
+  Prepare();
+  return ScanSymbolTreeForDefinition(&symbol_table_->Root(), symbol);
+}
+
 const verible::Symbol *SymbolTableHandler::FindDefinitionSymbol(
     absl::string_view symbol) {
-  if (files_dirty_) {
-    BuildProjectSymbolTable();
-  }
-  const SymbolTableNode *symbol_table_node =
-      ScanSymbolTreeForDefinition(&symbol_table_->Root(), symbol);
+  const SymbolTableNode *symbol_table_node = FindDefinitionNode(symbol);
   if (symbol_table_node) return symbol_table_node->Value().syntax_origin;
   return nullptr;
 }
@@ -323,8 +415,10 @@ std::vector<verible::lsp::Location> SymbolTableHandler::FindReferencesLocations(
     const verible::lsp::ReferenceParams &params,
     const verilog::BufferTrackerContainer &parsed_buffers) {
   Prepare();
-  const absl::string_view symbol =
+  std::optional<verible::TokenInfo> token =
       GetTokenAtTextDocumentPosition(params, parsed_buffers);
+  if (!token) return {};
+  const absl::string_view symbol = token->text();
   const SymbolTableNode &root = symbol_table_->Root();
   const SymbolTableNode *node = ScanSymbolTreeForDefinition(&root, symbol);
   if (!node) {
@@ -335,6 +429,75 @@ std::vector<verible::lsp::Location> SymbolTableHandler::FindReferencesLocations(
   return locations;
 }
 
+std::optional<verible::lsp::Range>
+SymbolTableHandler::FindRenameableRangeAtCursor(
+    const verible::lsp::PrepareRenameParams &params,
+    const verilog::BufferTrackerContainer &parsed_buffers) {
+  Prepare();
+
+  std::optional<verible::TokenInfo> symbol =
+      GetTokenInfoAtTextDocumentPosition(params, parsed_buffers);
+  if (symbol) {
+    verible::TokenInfo token = symbol.value();
+    const SymbolTableNode &root = symbol_table_->Root();
+    const SymbolTableNode *node =
+        ScanSymbolTreeForDefinition(&root, token.text());
+    if (!node) return {};
+    return RangeFromLineColumn(
+        GetTokenRangeAtTextDocumentPosition(params, parsed_buffers));
+  }
+  return {};
+}
+
+verible::lsp::WorkspaceEdit
+SymbolTableHandler::FindRenameLocationsAndCreateEdits(
+    const verible::lsp::RenameParams &params,
+    const verilog::BufferTrackerContainer &parsed_buffers) {
+  Prepare();
+  std::optional<verible::TokenInfo> token =
+      GetTokenAtTextDocumentPosition(params, parsed_buffers);
+  if (!token) return {};
+  absl::string_view symbol = token->text();
+  const SymbolTableNode &root = symbol_table_->Root();
+  const SymbolTableNode *node = ScanSymbolTreeForDefinition(&root, symbol);
+  if (!node) return {};
+  std::optional<verible::lsp::Location> location =
+      GetLocationFromSymbolName(*node->Key(), node->Value().file_origin);
+  if (!location) return {};
+  std::vector<verible::lsp::Location> locations;
+  locations.push_back(location.value());
+  std::vector<verible::lsp::TextEdit> textedits;
+  CollectReferences(&root, node, &locations);
+  if (locations.empty()) return {};
+  std::map<absl::string_view, std::vector<verible::lsp::TextEdit>>
+      file_edit_pairs;
+  for (const auto &loc : locations) {
+    file_edit_pairs[loc.uri].reserve(locations.size());
+  }
+  for (const auto &loc : locations) {
+    // TODO(jbylicki): Remove this band-aid fix once #1678 is merged - it should
+    // fix
+    //  duplicate definition/references appending in modules and remove the need
+    //  for adding the definition location above.
+    if (std::none_of(
+            file_edit_pairs[loc.uri].begin(), file_edit_pairs[loc.uri].end(),
+            [&loc](const verible::lsp::TextEdit &it) {
+              return loc.range.start.character == it.range.start.character &&
+                     loc.range.start.line == it.range.end.line;
+            })) {
+      file_edit_pairs[loc.uri].push_back(verible::lsp::TextEdit({
+          .range = loc.range,
+          .newText = params.newName,
+      }));
+    }
+  }
+  files_dirty_ = true;
+  verible::lsp::WorkspaceEdit edit = verible::lsp::WorkspaceEdit{
+      .changes = {},
+  };
+  edit.changes = file_edit_pairs;
+  return edit;
+}
 void SymbolTableHandler::CollectReferencesReferenceComponents(
     const ReferenceComponentNode *ref, const SymbolTableNode *ref_origin,
     const SymbolTableNode *definition_node,
@@ -365,9 +528,26 @@ void SymbolTableHandler::CollectReferences(
 }
 
 void SymbolTableHandler::UpdateFileContent(
-    absl::string_view path, const verible::TextStructureView *content) {
+    absl::string_view path, const verilog::VerilogAnalyzer *parsed) {
   files_dirty_ = true;
-  curr_project_->UpdateFileContents(path, content);
+  curr_project_->UpdateFileContents(path, parsed);
+}
+
+BufferTrackerContainer::ChangeCallback
+SymbolTableHandler::CreateBufferTrackerListener() {
+  return [this](const std::string &uri,
+                const verilog::BufferTracker *buffer_tracker) {
+    const std::string path = verible::lsp::LSPUriToPath(uri);
+    if (path.empty()) {
+      LOG(ERROR) << "Could not convert LS URI to path:  " << uri;
+      return;
+    }
+    // Note, if we actually got any result we must use it here to update
+    // the file content, as the old one will be deleted.
+    // So must use current() as last_good() might be nullptr.
+    UpdateFileContent(
+        path, buffer_tracker ? &buffer_tracker->current()->parser() : nullptr);
+  };
 }
 
 };  // namespace verilog

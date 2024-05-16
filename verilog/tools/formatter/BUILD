@@ -7,6 +7,7 @@ load("//bazel:variables.bzl", "STATIC_EXECUTABLES_FEATURE")
 package(
     default_applicable_licenses = ["//:license"],
     default_visibility = ["//visibility:private"],
+    features = ["layering_check"],
 )
 
 cc_binary(
@@ -19,14 +20,16 @@ cc_binary(
         "//common/util:file-util",
         "//common/util:init-command-line",
         "//common/util:interval-set",
-        "//common/util:logging",
+        "//common/util:iterator-range",
         "//verilog/formatting:format-style",
         "//verilog/formatting:format-style-init",
         "//verilog/formatting:formatter",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:usage",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 

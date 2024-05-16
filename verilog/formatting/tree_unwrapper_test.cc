@@ -14,6 +14,7 @@
 
 #include "verilog/formatting/tree_unwrapper.h"
 
+#include <cstddef>
 #include <initializer_list>
 #include <iostream>
 #include <memory>
@@ -25,7 +26,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "common/formatting/basic_format_style.h"
 #include "common/formatting/format_token.h"
 #include "common/formatting/token_partition_tree.h"
 #include "common/formatting/unwrapped_line.h"
@@ -35,9 +35,9 @@
 #include "common/util/spacer.h"
 #include "common/util/tree_operations.h"
 #include "common/util/vector_tree.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "verilog/analysis/verilog_analyzer.h"
+#include "verilog/formatting/format_style.h"
 
 #undef EXPECT_OK
 #define EXPECT_OK(value) EXPECT_TRUE((value).ok())

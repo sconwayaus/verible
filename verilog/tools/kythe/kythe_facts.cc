@@ -14,17 +14,15 @@
 
 #include "verilog/tools/kythe/kythe_facts.h"
 
-#include <algorithm>
+#include <cstddef>
 #include <iostream>
-#include <sstream>
 #include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "common/util/spacer.h"
 

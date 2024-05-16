@@ -40,12 +40,12 @@ jobs:
     - name: Install Dependencies
       run: |
         apt -qqy update
-        apt -qq -y install clang-format git
-        clang-format --version
+        apt -qq -y install clang-format-15 git
+        clang-format-15 --version
 
     - name: Run formatting style check
       run: |
-        ./.github/bin/run-clang-format.sh
+        CLANG_FORMAT=clang-format-15 ./.github/bin/run-clang-format.sh
         ./.github/bin/check-potential-problems.sh
 
     - name: 📤 Upload performance graphs
@@ -74,10 +74,18 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install Dependencies
+    - name: Get latest clang-tidy
       run: |
-        apt -qqy update
-        apt -qq -y install clang-tidy-11 clang-tidy-14 build-essential git wget
+        apt -qq -y update
+        apt -qq -y install wget software-properties-common gpg lsb-release
+        apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 15CF4D18AF4F7421
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        ./llvm.sh 17
+
+    - name: Install other Dependencies
+      run: |
+        apt -qq -y install clang-tidy-11 clang-tidy-17 build-essential git wget
         source ./.github/settings.sh
         ./.github/bin/install-bazel.sh
 
@@ -102,11 +110,11 @@ jobs:
         .github/bin/make-compilation-db.sh
         wc -l compile_commands.json
         echo "::endgroup::"
-        # For runtime references, use clang-tidy 11, everything else: latest.
+        # For runtime references, use clang-tidy 11 that still has it, everything else: latest.
         CLANG_TIDY=clang-tidy-11 ./.github/bin/run-clang-tidy-cached.cc --checks="-*,google-runtime-references" \
            || ( cat verible_clang-tidy.out ; exit 1)
 
-        CLANG_TIDY=clang-tidy-14 ./.github/bin/run-clang-tidy-cached.cc \
+        CLANG_TIDY=clang-tidy-17 ./.github/bin/run-clang-tidy-cached.cc \
             || ( cat verible_clang-tidy.out ; exit 1)
 
     - name: 📤 Upload performance graphs
@@ -125,6 +133,7 @@ jobs:
       matrix:
         mode:
         - test
+        - test-clang
         - test-nortti
         - test-c++20
         - test-c++23
@@ -327,9 +336,9 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        brew unlink bazelisk
-        brew install llvm bazel@6
+        brew install llvm
         echo "CLANG_TIDY=$(brew --prefix llvm)/bin/clang-tidy" >> $GITHUB_ENV
+        echo "USE_BAZEL_VERSION=6.5.0" >> $GITHUB_ENV
 
     - name: Checkout code
       uses: actions/checkout@v3
@@ -361,7 +370,9 @@ jobs:
         .github/bin/run-clang-tidy-cached.cc --checks="-*"
 
   MacOsBuild:
-    runs-on: macos-latest
+    # New MacOS has a broken patch utility:
+    # //verilog/tools/lint:lint-tool_test trips over a no-newline-at-end-of-file
+    runs-on: macos-12
     steps:
 
     - name: Cancel previous
@@ -371,8 +382,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        brew unlink bazelisk
-        brew install bazel@6
+        echo "USE_BAZEL_VERSION=6.5.0" >> $GITHUB_ENV
 
     - name: Checkout code
       uses: actions/checkout@v3
@@ -425,7 +435,7 @@ jobs:
         apt -qq -y install npm nodejs
 
   WindowsBuild:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
 
     - uses: actions/checkout@v3
@@ -448,7 +458,7 @@ jobs:
     - name: Install dependencies
       run: |
         choco install bazel --force --version=6.4.0
-        choco install llvm --force
+        choco install winflexbison3
 
     - name: Debug bazel directory settings
       # We need to explicitly call the bazel binary from choco, otherwise

@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -31,8 +32,9 @@
 #include "common/text/text_structure.h"
 #include "common/text/token_info.h"
 #include "common/util/file_util.h"
+#include "common/util/logging.h"
 #include "verilog/CST/module.h"
-#include "verilog/CST/verilog_matchers.h"
+#include "verilog/CST/verilog_nonterminals.h"
 #include "verilog/analysis/descriptions.h"
 #include "verilog/analysis/lint_rule_registry.h"
 

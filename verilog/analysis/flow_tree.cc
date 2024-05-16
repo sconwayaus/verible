@@ -15,14 +15,11 @@
 #include "verilog/analysis/flow_tree.h"
 
 #include <map>
-#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "common/util/logging.h"
-#include "common/util/status_macros.h"
 #include "verilog/parser/verilog_token_enum.h"
 
 namespace verilog {
@@ -229,6 +226,8 @@ absl::Status FlowTree::GenerateControlFlowTree() {
           if_blocks_.pop_back();
           break;
         }
+        default:
+          LOG(FATAL) << "IsConditional() not catching " << current_token_enum;
       }
 
     } else {

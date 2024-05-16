@@ -14,20 +14,17 @@
 
 #include "verilog/CST/constraints.h"
 
-#include <memory>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "common/analysis/syntax_tree_search.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
 #include "common/text/token_info.h"
 #include "common/text/tree_utils.h"
-#include "common/util/casts.h"
-#include "common/util/logging.h"
 #include "verilog/CST/identifier.h"
 #include "verilog/CST/verilog_matchers.h"  // IWYU pragma: keep
+#include "verilog/CST/verilog_nonterminals.h"
 
 namespace verilog {
 

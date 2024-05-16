@@ -18,6 +18,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/symbol.h"
@@ -25,8 +26,10 @@
 #include "common/text/token_info.h"
 #include "verilog/CST/context_functions.h"
 #include "verilog/CST/macro.h"
+#include "verilog/CST/verilog_nonterminals.h"
 #include "verilog/analysis/descriptions.h"
 #include "verilog/analysis/lint_rule_registry.h"
+#include "verilog/parser/verilog_token_enum.h"
 
 namespace verilog {
 namespace analysis {
@@ -55,11 +58,21 @@ static std::string FormatReason(const verible::TokenInfo &macro_id) {
 
 // Returns true if leaf is a macro and matches `uvm_
 static bool IsUvmMacroId(const verible::SyntaxTreeLeaf &leaf) {
+  const absl::string_view text = leaf.get().text();
+  const bool starts_with_uvm = absl::StartsWithIgnoreCase(text, "`uvm_");
+
   if (leaf.Tag().tag == verilog_tokentype::MacroCallId ||
-      leaf.Tag().tag == verilog_tokentype::MacroIdItem ||
-      leaf.Tag().tag == verilog_tokentype::MacroIdentifier) {
-    return absl::StartsWithIgnoreCase(leaf.get().text(), "`uvm_");
+      leaf.Tag().tag == verilog_tokentype::MacroIdItem) {
+    return starts_with_uvm;
   }
+
+  const bool ends_with_end = absl::EndsWithIgnoreCase(text, "_end");
+  // We don't want to complain about macros like:
+  // `UVM_DEFAULT_TIMEOUT, UVM_MAX_STREAMBITS, ...
+  if (leaf.Tag().tag == verilog_tokentype::MacroIdentifier) {
+    return starts_with_uvm && ends_with_end;
+  }
+
   return false;
 }
 

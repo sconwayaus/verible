@@ -16,12 +16,12 @@
 
 #include "common/text/token_info.h"
 
+#include <cstddef>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "common/text/constants.h"
 #include "common/util/range.h"

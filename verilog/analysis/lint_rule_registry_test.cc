@@ -14,12 +14,11 @@
 
 #include "verilog/analysis/lint_rule_registry.h"
 
-#include <cstddef>
 #include <map>
 #include <memory>
-#include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "common/analysis/line_lint_rule.h"

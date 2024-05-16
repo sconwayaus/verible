@@ -7,6 +7,7 @@ load("//bazel:variables.bzl", "STATIC_EXECUTABLES_FEATURE")
 package(
     default_applicable_licenses = ["//:license"],
     default_visibility = ["//visibility:private"],
+    features = ["layering_check"],
 )
 
 cc_binary(
@@ -15,6 +16,7 @@ cc_binary(
     features = STATIC_EXECUTABLES_FEATURE,
     visibility = ["//visibility:public"],
     deps = [
+        "//common/text:token-stream-view",
         "//common/util:file-util",
         "//common/util:init-command-line",
         "//common/util:status-macros",
@@ -28,7 +30,9 @@ cc_binary(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:usage",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 

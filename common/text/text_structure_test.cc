@@ -22,11 +22,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "common/strings/line_column_map.h"
 #include "common/text/concrete_syntax_tree.h"
+#include "common/text/constants.h"
 #include "common/text/symbol.h"
 #include "common/text/text_structure_test_utils.h"
 #include "common/text/token_info.h"
@@ -363,7 +363,7 @@ class TextStructureViewInternalsTest : public TextStructureViewPublicTest {
   // modifications.  This is only appropriate for tests on private or protected
   // methods; public methods should always leave the structure in a consistent
   // state.
-  ~TextStructureViewInternalsTest() override { Clear(); }
+  ~TextStructureViewInternalsTest() override { Clear(); }  // not yet final
 };
 
 // Test that whole tree is returned with offset 0.
@@ -590,6 +590,10 @@ TEST_F(TextStructureViewInternalsTest, RangeConsistencyFailPastContentsBegin) {
   EXPECT_FALSE(InternalConsistencyCheck().ok());
 }
 
+// The glibcc debug is seeing right through the marginal error conditions
+// we try to test that they are discovered by our checks here.
+// Good, but that also means that we have to disable with GLBCCXX debug
+#ifndef _GLIBCXX_DEBUG
 // Test that FastTokenRangeConsistencyCheck catches first token iterator past
 // begin.
 TEST_F(TextStructureViewInternalsTest,
@@ -633,6 +637,7 @@ TEST_F(TextStructureViewInternalsTest,
   EXPECT_FALSE(FastTokenRangeConsistencyCheck().ok());
   EXPECT_FALSE(InternalConsistencyCheck().ok());
 }
+#endif  // GLIBCC_DEBUG
 
 // Test that FastTokenRangeConsistencyCheck catches last token in tree
 // located past the begin.

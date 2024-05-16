@@ -14,13 +14,14 @@
 
 #include "common/text/concrete_syntax_tree.h"
 
+#include <cstddef>
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include "common/text/symbol.h"
 #include "common/text/tree_compare.h"
 #include "common/text/visitors.h"
+#include "common/util/casts.h"
 #include "common/util/logging.h"
 
 namespace verible {

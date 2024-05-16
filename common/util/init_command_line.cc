@@ -19,18 +19,18 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/log_severity.h"
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
-#include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
 #include "absl/flags/usage_config.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "common/util/generated_verible_build_version.h"
-#include "common/util/logging.h"
 
 namespace verible {
 
@@ -62,17 +62,7 @@ static std::string GetBuildVersion() {
   return result;
 }
 
-// We might want to have argc edited in the future, hence non-const param.
-std::vector<absl::string_view> InitCommandLine(
-    absl::string_view usage,
-    int *argc,  // NOLINT(readability-non-const-parameter)
-    char ***argv) {
-  absl::InitializeSymbolizer(*argv[0]);
-  absl::FlagsUsageConfig usage_config;
-  usage_config.version_string = GetBuildVersion;
-  absl::SetFlagsUsageConfig(usage_config);
-  absl::SetProgramUsageMessage(usage);  // copies usage string
-
+void SetLoggingLevelsFromEnvironment() {
   // To avoid confusing and rarely used flags, we just enable logging via
   // environment variables.
   const char *const stderr_log_level = getenv("VERIBLE_LOGTHRESHOLD");
@@ -88,11 +78,22 @@ std::vector<absl::string_view> InitCommandLine(
   const char *const vlog_level_env = getenv("VERIBLE_VLOG_DETAIL");
   int vlog_level = 0;
   if (vlog_level_env && absl::SimpleAtoi(vlog_level_env, &vlog_level)) {
-    VERIBLE_INTERNAL_SET_VLOGLEVEL(vlog_level);
-  } else {
-    VERIBLE_INTERNAL_SET_VLOGLEVEL(0);
+    absl::SetGlobalVLogLevel(vlog_level);
   }
+}
 
+// We might want to have argc edited in the future, hence non-const param.
+std::vector<absl::string_view> InitCommandLine(
+    absl::string_view usage,
+    int *argc,  // NOLINT(readability-non-const-parameter)
+    char ***argv) {
+  absl::InitializeSymbolizer(*argv[0]);
+  absl::FlagsUsageConfig usage_config;
+  usage_config.version_string = GetBuildVersion;
+  absl::SetFlagsUsageConfig(usage_config);
+  absl::SetProgramUsageMessage(usage);  // copies usage string
+
+  SetLoggingLevelsFromEnvironment();
   absl::InitializeLog();
 
   // Print stacktrace on issue, but not if --config=asan

@@ -8,6 +8,7 @@ package(
         "//verilog/CST:__subpackages__",
         "//verilog/analysis:__subpackages__",
     ],
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -45,6 +46,8 @@ cc_test(
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:tree-builder-test-util",
+        "//common/util:casts",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -70,6 +73,7 @@ cc_test(
         ":matcher-test-utils",
         "//common/text:symbol",
         "//common/text:tree-builder-test-util",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -109,6 +113,8 @@ cc_test(
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:tree-builder-test-util",
+        "//common/util:casts",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -120,6 +126,7 @@ cc_library(
     deps = [
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/util:casts",
     ],
 )
 
@@ -133,6 +140,8 @@ cc_test(
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:tree-builder-test-util",
+        "//common/util:casts",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -151,7 +160,7 @@ cc_library(
         "//common/text:tree-utils",
         "//common/text:visitors",
         "@com_google_absl//absl/status",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_googletest//:gtest",  # for library testonly
     ],
 )

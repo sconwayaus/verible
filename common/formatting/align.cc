@@ -28,22 +28,25 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "common/formatting/format_token.h"
 #include "common/formatting/token_partition_tree.h"
 #include "common/formatting/unwrapped_line.h"
 #include "common/strings/display_utils.h"
-#include "common/strings/range.h"
+#include "common/strings/position.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/token_info.h"
-#include "common/text/token_stream_view.h"
+#include "common/text/tree_context_visitor.h"
 #include "common/text/tree_utils.h"
-#include "common/util/algorithm.h"
 #include "common/util/container_iterator_range.h"
 #include "common/util/enum_flags.h"
+#include "common/util/iterator_adaptors.h"
 #include "common/util/iterator_range.h"
 #include "common/util/logging.h"
+#include "common/util/range.h"
 #include "common/util/tree_operations.h"
 #include "common/util/vector_tree.h"
 #include "common/util/vector_tree_iterators.h"
@@ -264,7 +267,6 @@ static void ColumnsTreeFormatter(
 
     const std::vector<absl::string_view> parts =
         absl::StrSplit(cell.text, '\t');
-    CHECK_LE(parts.size(), 3);
 
     const auto width = cell.width - kCellSeparator.size();
 
@@ -292,6 +294,8 @@ static void ColumnsTreeFormatter(
                         parts[1], right_pad, parts[2]);
         break;
       }
+      default:
+        CHECK_LE(parts.size(), 3);
     }
   }
   for (const auto& line : lines) {

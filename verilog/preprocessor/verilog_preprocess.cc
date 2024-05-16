@@ -14,10 +14,8 @@
 
 #include "verilog/preprocessor/verilog_preprocess.h"
 
-#include <algorithm>
 #include <filesystem>
 #include <functional>
-#include <iterator>
 #include <map>
 #include <memory>
 #include <string>
@@ -25,17 +23,19 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "common/lexer/token_generator.h"
 #include "common/lexer/token_stream_adapter.h"
 #include "common/text/macro_definition.h"
+#include "common/text/text_structure.h"
 #include "common/text/token_info.h"
 #include "common/text/token_stream_view.h"
 #include "common/util/container_util.h"
-#include "common/util/file_util.h"
 #include "common/util/logging.h"
 #include "common/util/status_macros.h"
+#include "verilog/analysis/verilog_filelist.h"
 #include "verilog/parser/verilog_lexer.h"
 #include "verilog/parser/verilog_parser.h"  // for verilog_symbol_name()
 #include "verilog/parser/verilog_token_enum.h"
@@ -684,6 +684,8 @@ absl::Status VerilogPreprocess::HandleTokenIterator(
       return HandleElse(iter);
     case PP_endif:
       return HandleEndif(iter);
+    default:
+      break;  // not interested in anything else
   }
   if (config_.expand_macros && ((*iter)->token_enum() == MacroIdentifier ||
                                 (*iter)->token_enum() == MacroIdItem ||

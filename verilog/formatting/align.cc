@@ -16,20 +16,21 @@
 
 #include <algorithm>
 #include <functional>
-#include <iostream>
-#include <iterator>
 #include <limits>
 #include <map>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "common/formatting/align.h"
 #include "common/formatting/format_token.h"
 #include "common/formatting/token_partition_tree.h"
 #include "common/formatting/unwrapped_line.h"
+#include "common/strings/position.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/concrete_syntax_tree.h"
 #include "common/text/symbol.h"
 #include "common/text/token_info.h"
+#include "common/text/tree_context_visitor.h"
 #include "common/text/tree_utils.h"
 #include "common/util/casts.h"
 #include "common/util/logging.h"
@@ -37,6 +38,7 @@
 #include "verilog/CST/context_functions.h"
 #include "verilog/CST/declaration.h"
 #include "verilog/CST/verilog_nonterminals.h"
+#include "verilog/formatting/format_style.h"
 #include "verilog/parser/verilog_token_classifications.h"
 #include "verilog/parser/verilog_token_enum.h"
 
@@ -206,8 +208,9 @@ static bool TokenForcesLineBreak(const PreFormatToken& ftoken) {
     case verilog_tokentype::TK_begin:
     case verilog_tokentype::TK_fork:
       return true;
+    default:
+      return false;
   }
-  return false;
 }
 
 static bool IgnoreMultilineCaseStatements(const TokenPartitionTree& partition) {
@@ -538,6 +541,8 @@ class StructUnionMemberColumnSchemaScanner : public VerilogColumnSchemaScanner {
         }
         break;
       }
+      default:
+        break;
     }
     VLOG(2) << __FUNCTION__ << ", leaving leaf: " << leaf.get();
   }

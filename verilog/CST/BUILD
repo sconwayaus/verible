@@ -13,6 +13,7 @@ package(
         "//verilog/tools/ls:__pkg__",  # DocumentSymbol
         "//verilog/tools/syntax:__pkg__",  # for printing
     ],
+    features = ["layering_check"],
 )
 
 # Generate foreach list for nonterminal enums.
@@ -31,11 +32,11 @@ cc_library(
     name = "verilog-nonterminals",
     srcs = [
         "verilog_nonterminals.cc",
-        "verilog_nonterminals_foreach.inc",
         "verilog_nonterminals_foreach-gen.inc",
     ],
     hdrs = [
         "verilog_nonterminals.h",
+        "verilog_nonterminals_foreach.inc",
     ],
     deps = [
         "//common/text:constants",
@@ -49,6 +50,7 @@ cc_test(
     deps = [
         ":verilog-nonterminals",
         "//common/text:constants",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -77,11 +79,11 @@ cc_test(
     deps = [
         ":verilog-matchers",
         ":verilog-treebuilder-utils",
-        "//common/analysis/matcher",
         "//common/analysis/matcher:core-matchers",
         "//common/analysis/matcher:matcher-builders",
         "//common/analysis/matcher:matcher-test-utils",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -98,6 +100,7 @@ cc_library(
         "//common/text:token-info",
         "//common/util:logging",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -108,6 +111,7 @@ cc_test(
         ":verilog-treebuilder-utils",
         "//common/text:tree-builder-test-util",
         "//common/text:tree-utils",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -122,7 +126,7 @@ cc_library(
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:text-structure",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_googletest//:gtest",  # for library testonly
     ],
 )
@@ -136,17 +140,11 @@ cc_library(
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:tree-utils",
-        "//common/util:casts",
-        "//common/util:logging",
-        "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -156,18 +154,13 @@ cc_test(
     deps = [
         ":constraints",
         ":match-test-utils",
-        ":verilog-nonterminals",
+        "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
-        "//common/text:concrete-syntax-leaf",
-        "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
         "//common/text:token-info",
-        "//common/util:casts",
-        "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
-        "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -179,12 +172,12 @@ cc_library(
     deps = [
         ":verilog-matchers",
         ":verilog-nonterminals",
-        ":verilog-treebuilder-utils",
         "//common/analysis:syntax-tree-search",
-        "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/text:symbol-ptr",
         "//common/text:tree-utils",
+        "//common/util:logging",
         "//verilog/parser:verilog-token-classifications",
         "//verilog/parser:verilog-token-enum",
     ],
@@ -199,10 +192,8 @@ cc_test(
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:text-structure",
-        "//common/text:token-info-test-util",
-        "//common/text:tree-utils",
-        "//common/util:range",
-        "//verilog/analysis:verilog-analyzer",
+        "//common/util:logging",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -221,6 +212,7 @@ cc_library(
         "//common/text:concrete-syntax-tree",
         "//common/text:constants",
         "//common/text:symbol",
+        "//common/text:symbol-ptr",
         "//common/text:token-info",
         "//common/text:tree-utils",
         "//common/util:container-util",
@@ -238,6 +230,8 @@ cc_test(
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:text-structure",
         "//common/text:tree-utils",
+        "//common/util:logging",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -248,9 +242,8 @@ cc_library(
     hdrs = ["dimensions.h"],
     deps = [
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:tree-utils",
@@ -264,8 +257,6 @@ cc_test(
         ":dimensions",
         ":verilog-matchers",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
@@ -275,6 +266,7 @@ cc_test(
         "//common/util:casts",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -294,10 +286,10 @@ cc_library(
         "//common/text:token-info",
         "//common/text:tree-utils",
         "//common/util:casts",
-        "//common/util:logging",
         "//verilog/parser:verilog-token-classifications",
         "//verilog/parser:verilog-token-enum",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -308,13 +300,17 @@ cc_test(
         ":expression",
         ":match-test-utils",
         ":verilog-nonterminals",
-        ":verilog-tree-print",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
+        "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/text:text-structure",
+        "//common/text:token-info",
         "//common/text:tree-utils",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
+        "//verilog/preprocessor:verilog-preprocess",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -330,8 +326,7 @@ cc_library(
         ":verilog-nonterminals",
         ":verilog-treebuilder-utils",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
+        "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:tree-utils",
@@ -345,22 +340,18 @@ cc_test(
         ":functions",
         ":identifier",
         ":match-test-utils",
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
-        "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
-        "//common/text:token-info",
         "//common/text:token-info-test-util",
         "//common/text:tree-utils",
-        "//common/util:casts",
         "//common/util:logging",
-        "//common/util:range",
         "//verilog/analysis:verilog-analyzer",
         "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -371,9 +362,8 @@ cc_library(
     hdrs = ["identifier.h"],
     deps = [
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
@@ -395,10 +385,10 @@ cc_test(
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:concrete-syntax-leaf",
         "//common/text:text-structure",
-        "//common/text:token-info",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -411,11 +401,14 @@ cc_library(
         ":verilog-matchers",
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
+        "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:tree-utils",
+        "//common/text:visitors",
         "//common/util:logging",
+        "//verilog/parser:verilog-token-enum",
     ],
 )
 
@@ -425,13 +418,15 @@ cc_test(
     deps = [
         ":macro",
         ":match-test-utils",
-        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:text-structure",
         "//common/text:token-info-test-util",
+        "//common/util:logging",
         "//common/util:range",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -443,14 +438,13 @@ cc_library(
     deps = [
         ":identifier",
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
-        "//common/text:token-info",
         "//common/text:tree-utils",
+        "//common/text:visitors",
     ],
 )
 
@@ -460,16 +454,13 @@ cc_test(
     deps = [
         ":class",
         ":match-test-utils",
+        "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
-        "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
-        "//common/text:token-info",
-        "//common/text:token-info-test-util",
-        "//common/util:casts",
         "//common/util:logging",
-        "//common/util:range",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -482,14 +473,12 @@ cc_library(
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:tree-utils",
-        "//verilog/parser:verilog-token-enum",
+        "//common/util:logging",
     ],
 )
 
@@ -501,15 +490,10 @@ cc_test(
         ":module",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
-        "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
-        "//common/text:token-info",
-        "//common/text:token-info-test-util",
-        "//common/util:casts",
         "//common/util:logging",
-        "//common/util:range",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -521,12 +505,14 @@ cc_library(
     deps = [
         ":identifier",
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
+        "//common/analysis/matcher:inner-match-handlers",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/text:token-info",
         "//common/text:tree-utils",
     ],
 )
@@ -546,6 +532,7 @@ cc_test(
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -557,12 +544,14 @@ cc_library(
     deps = [
         ":identifier",
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
+        "//common/analysis/matcher:inner-match-handlers",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/text:token-info",
         "//common/text:tree-utils",
     ],
 )
@@ -572,13 +561,10 @@ cc_test(
     srcs = ["data_test.cc"],
     deps = [
         ":data",
-        ":verilog-nonterminals",
-        "//common/analysis:syntax-tree-search",
-        "//common/text:syntax-tree-context",
         "//common/text:text-structure",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -589,14 +575,14 @@ cc_library(
     hdrs = ["package.h"],
     deps = [
         ":verilog-matchers",
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:tree-utils",
+        "//verilog/parser:verilog-token-enum",
     ],
 )
 
@@ -609,13 +595,13 @@ cc_test(
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
         "//common/text:token-info",
         "//common/util:casts",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
         "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -629,8 +615,6 @@ cc_library(
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
@@ -639,7 +623,6 @@ cc_library(
         "//common/util:casts",
         "//common/util:logging",
         "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -652,7 +635,6 @@ cc_test(
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
-        "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:text-structure",
@@ -661,7 +643,8 @@ cc_test(
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
         "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -675,8 +658,6 @@ cc_library(
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
@@ -702,6 +683,8 @@ cc_test(
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -711,12 +694,12 @@ cc_library(
     srcs = ["seq_block.cc"],
     hdrs = ["seq_block.h"],
     deps = [
-        ":identifier",
         ":verilog-nonterminals",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:syntax-tree-context",
+        "//common/text:token-info",
         "//common/text:tree-utils",
         "//common/util:logging",
         "//verilog/parser:verilog-token-enum",
@@ -731,11 +714,11 @@ cc_test(
         ":verilog-matchers",
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/text:syntax-tree-context",
+        "//common/text:symbol",
         "//common/text:text-structure",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -749,14 +732,13 @@ cc_library(
         ":identifier",
         ":type",
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
-        "//common/text:token-info",
         "//common/text:tree-utils",
+        "//common/text:visitors",
     ],
 )
 
@@ -766,7 +748,6 @@ cc_test(
     deps = [
         ":match-test-utils",
         ":statement",
-        ":verilog-matchers",
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
         "//common/analysis:syntax-tree-search-test-utils",
@@ -774,12 +755,10 @@ cc_test(
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:text-structure",
-        "//common/text:token-info",
-        "//common/text:token-info-test-util",
-        "//common/util:casts",
         "//common/util:logging",
-        "//common/util:range",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -791,9 +770,9 @@ cc_library(
     deps = [
         ":identifier",
         ":verilog-matchers",  # fixdeps: keep
+        ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
+        "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:tree-utils",
@@ -812,7 +791,6 @@ cc_test(
         "//common/analysis:syntax-tree-search-test-utils",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
-        "//common/text:symbol",
         "//common/text:text-structure",
         "//common/text:token-info",
         "//common/text:tree-utils",
@@ -820,7 +798,8 @@ cc_test(
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
         "//verilog/parser:verilog-token-enum",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -834,13 +813,11 @@ cc_library(
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",
         "//common/analysis:syntax-tree-search",
-        "//common/analysis/matcher",
-        "//common/analysis/matcher:matcher-builders",
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
+        "//common/text:symbol-ptr",
         "//common/text:tree-utils",
-        "//common/util:iterator-range",
         "//common/util:logging",
         "//verilog/parser:verilog-token-enum",
     ],
@@ -861,6 +838,8 @@ cc_test(
         "//common/text:tree-utils",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -881,6 +860,7 @@ cc_library(
     deps = [
         "//common/util:logging",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -898,6 +878,7 @@ cc_library(
         "//common/util:value-saver",
         "//verilog/parser:verilog-parser",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -912,11 +893,13 @@ cc_library(
         "//common/text:symbol",
         "//common/text:token-info",
         "//common/text:token-info-json",
+        "//common/text:visitors",
         "//common/util:value-saver",
         "//verilog/parser:verilog-token",
         "//verilog/parser:verilog-token-classifications",
-        "@com_google_absl//absl/strings",
-        "@jsonhpp",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_absl//absl/strings:string_view",
+        "@jsonhpp//:json",
     ],
 )
 
@@ -931,6 +914,7 @@ cc_test(
         "//common/text:syntax-tree-context",
         "//common/text:tree-builder-test-util",
         "//common/util:casts",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -940,7 +924,8 @@ cc_test(
     srcs = ["numbers_test.cc"],
     deps = [
         ":numbers",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -952,7 +937,7 @@ cc_test(
         ":verilog-tree-print",
         "//common/text:symbol",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -965,7 +950,8 @@ cc_test(
         "//common/text:symbol",
         "//common/util:logging",
         "//verilog/analysis:verilog-analyzer",
-        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
+        "@jsonhpp//:json",
     ],
 )

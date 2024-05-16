@@ -1,4 +1,4 @@
-// Copyright 2017-2020 The Verible Authors.
+// Copyright 2023 The Verible Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-namespace verible {
-// Used as 'extern' reference in logging.h. Set in init_command_line.cc
-int global_vlog_level_ = 0;
-}  // namespace verible
+#ifndef VERILOG_TOOLS_LS_HOVER_H_INCLUDED
+#define VERILOG_TOOLS_LS_HOVER_H_INCLUDED
+
+#include "common/lsp/lsp-protocol.h"
+#include "verilog/tools/ls/lsp-parse-buffer.h"
+#include "verilog/tools/ls/symbol-table-handler.h"
+
+namespace verilog {
+// Provides hover information for given location
+verible::lsp::Hover CreateHoverInformation(
+    SymbolTableHandler *symbol_table_handler,
+    const BufferTrackerContainer &tracker, const verible::lsp::HoverParams &p);
+}  // namespace verilog
+
+#endif  // hover_h_INCLUDED

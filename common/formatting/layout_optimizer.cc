@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <iomanip>
 #include <ios>
 #include <limits>
@@ -28,12 +29,13 @@
 #include <utility>
 
 #include "absl/container/fixed_array.h"
+#include "absl/log/log.h"
 #include "common/formatting/basic_format_style.h"
 #include "common/formatting/layout_optimizer_internal.h"
-#include "common/formatting/line_wrap_searcher.h"
 #include "common/formatting/token_partition_tree.h"
 #include "common/formatting/unwrapped_line.h"
 #include "common/util/container_iterator_range.h"
+#include "common/util/iterator_range.h"
 #include "common/util/logging.h"
 #include "common/util/tree_operations.h"
 #include "common/util/value_saver.h"
@@ -567,7 +569,7 @@ LayoutFunction TokenPartitionsLayoutOptimizer::CalculateOptimalLayout(
         for (const auto& child : iterator_range(node.Children().begin() + 2,
                                                 node.Children().end())) {
           if (child.Value().IndentationSpaces() != indentation) {
-            VLOG(0) << "Indentations of subpartitions from the second to the "
+            VLOG(1) << "Indentations of subpartitions from the second to the "
                        "last are not equal. Using indentation of the second "
                        "subpartition as a hanging indentation. Parent node:\n"
                     << node;

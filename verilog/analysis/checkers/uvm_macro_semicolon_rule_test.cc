@@ -18,9 +18,7 @@
 
 #include "common/analysis/linter_test_utils.h"
 #include "common/analysis/syntax_tree_linter_test_utils.h"
-#include "common/text/symbol.h"
 #include "gtest/gtest.h"
-#include "verilog/CST/verilog_nonterminals.h"
 #include "verilog/analysis/verilog_analyzer.h"
 
 namespace verilog {
@@ -39,6 +37,15 @@ TEST(UvmMacroSemicolonRuleTest, BaseTests) {
       {"module m;\nendmodule\n"},
       {"class c;\nendclass\n"},
       {"package m_pkg;\nendpackage\n"}};
+
+  RunLintTestCases<VerilogAnalyzer, UvmMacroSemicolonRule>(kTestCases);
+}
+
+TEST(UvmMacroSemicolonRuleTest, NoFalsePositivesTest) {
+  const std::initializer_list<LintTestCase> kTestCases = {
+      {"module m;\nint k = `UVM_DEFAULT_TIMEOUT; endmodule\n"},
+      {"module m;\nbit [63:0] k = `UVM_REG_ADDR_WIDTH'(0); endmodule\n"},
+  };
 
   RunLintTestCases<VerilogAnalyzer, UvmMacroSemicolonRule>(kTestCases);
 }

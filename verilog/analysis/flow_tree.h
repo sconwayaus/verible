@@ -18,11 +18,11 @@
 #include <bitset>
 #include <functional>
 #include <map>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "common/text/token_stream_view.h"
 
 namespace verilog {

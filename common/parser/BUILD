@@ -7,6 +7,7 @@ package(
         "//common/analysis:__subpackages__",
         "//verilog/parser:__subpackages__",
     ],
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -18,8 +19,9 @@ cc_library(
         "//common/lexer:token-generator",
         "//common/text:concrete-syntax-tree",
         "//common/text:token-info",
+        "//common/util:logging",
         "@com_google_absl//absl/status",
-        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -56,7 +58,9 @@ cc_library(
         "//common/text:concrete-syntax-leaf",
         "//common/text:concrete-syntax-tree",
         "//common/text:token-info",
+        "//common/util:casts",
         "//common/util:logging",
+        "@com_google_absl//absl/strings:string_view",
     ],
 )
 
@@ -68,9 +72,10 @@ cc_library(
         "//common/analysis/matcher:descent-path",
         "//common/text:parser-verifier",
         "//common/text:symbol",
-        "//common/text:token-info",
         "//common/text:token-info-test-util",
+        "//common/util:logging",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings:string_view",
         "@com_google_googletest//:gtest",  # for library testonly
     ],
 )
@@ -87,7 +92,9 @@ cc_test(
         "//common/text:concrete-syntax-tree",
         "//common/text:symbol",
         "//common/text:token-info",
-        "@com_google_absl//absl/strings",
+        "//common/util:casts",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
 )

@@ -15,7 +15,6 @@
 #ifndef VERIBLE_COMMON_ANALYSIS_LINT_WAIVER_H_
 #define VERIBLE_COMMON_ANALYSIS_LINT_WAIVER_H_
 
-#include <cstddef>
 #include <map>
 #include <regex>  // NOLINT
 #include <set>
@@ -23,12 +22,13 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "common/strings/line_column_map.h"
 #include "common/strings/position.h"
 #include "common/text/text_structure.h"
 #include "common/text/token_stream_view.h"
 #include "common/util/container_util.h"
-#include "common/util/interval_set.h"
 
 namespace verible {
 

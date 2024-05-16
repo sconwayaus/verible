@@ -14,8 +14,6 @@
 
 #include "common/text/token_info.h"
 
-#include <algorithm>
-#include <cstddef>
 #include <iterator>
 #include <ostream>
 #include <sstream>  // IWYU pragma: keep  // for ostringstream
@@ -24,6 +22,7 @@
 
 #include "absl/strings/string_view.h"
 #include "common/strings/rebase.h"
+#include "common/text/constants.h"
 #include "common/util/logging.h"
 #include "common/util/range.h"
 

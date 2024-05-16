@@ -19,11 +19,11 @@
 #include <iosfwd>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "common/formatting/format_token.h"
 #include "common/formatting/token_partition_tree.h"
 #include "common/formatting/unwrapped_line.h"
 #include "common/text/concrete_syntax_tree.h"
-#include "common/text/syntax_tree_context.h"
 #include "common/text/text_structure.h"
 #include "common/text/token_info.h"
 #include "common/text/token_stream_view.h"
@@ -52,7 +52,7 @@ class TreeUnwrapper : public TreeContextVisitor {
   TreeUnwrapper& operator=(const TreeUnwrapper&) = delete;
   TreeUnwrapper& operator=(TreeUnwrapper&&) = delete;
 
-  ~TreeUnwrapper() override = default;
+  ~TreeUnwrapper() override = default;  // not yet final.
 
   // Partitions the token stream (in text_structure_view_) into
   // unwrapped_lines_ by traversing the syntax tree representation.

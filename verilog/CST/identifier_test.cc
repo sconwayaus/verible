@@ -15,7 +15,6 @@
 #include "verilog/CST/identifier.h"
 
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -24,9 +23,7 @@
 #include "common/analysis/syntax_tree_search_test_utils.h"
 #include "common/text/concrete_syntax_leaf.h"
 #include "common/text/text_structure.h"
-#include "common/text/token_info.h"
 #include "common/util/logging.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "verilog/CST/match_test_utils.h"
 #include "verilog/analysis/verilog_analyzer.h"

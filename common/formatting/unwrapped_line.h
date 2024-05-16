@@ -15,6 +15,7 @@
 #ifndef VERIBLE_COMMON_FORMATTING_UNWRAPPED_LINE_H_
 #define VERIBLE_COMMON_FORMATTING_UNWRAPPED_LINE_H_
 
+#include <cstddef>
 #include <functional>
 #include <iosfwd>
 #include <string>
@@ -22,6 +23,7 @@
 
 #include "common/formatting/format_token.h"
 #include "common/text/symbol.h"
+#include "common/text/token_info.h"
 
 namespace verible {
 

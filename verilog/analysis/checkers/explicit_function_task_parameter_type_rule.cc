@@ -15,13 +15,11 @@
 #include "verilog/analysis/checkers/explicit_function_task_parameter_type_rule.h"
 
 #include <set>
-#include <string>
 
-#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/matcher/bound_symbol_manager.h"
 #include "common/analysis/matcher/matcher.h"
-#include "common/text/concrete_syntax_leaf.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"
 #include "common/util/logging.h"

@@ -14,6 +14,7 @@
 
 #include "common/strings/diff.h"
 
+#include <cstdint>
 #include <initializer_list>
 #include <ostream>
 #include <sstream>
@@ -21,6 +22,8 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "common/strings/position.h"
+#include "external_libs/editscript.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

@@ -16,10 +16,10 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
 #include "common/text/symbol.h"
 #include "common/util/logging.h"
 #include "gtest/gtest.h"
+#include "nlohmann/json.hpp"
 #include "verilog/analysis/verilog_analyzer.h"
 
 namespace verilog {

@@ -13,7 +13,8 @@
 // limitations under the License.
 #include "common/strings/utf8.h"
 
-#include "gmock/gmock.h"
+#include <cstring>
+
 #include "gtest/gtest.h"
 
 namespace verible {

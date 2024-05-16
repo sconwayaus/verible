@@ -22,13 +22,14 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "common/analysis/line_lint_rule.h"
 #include "common/analysis/syntax_tree_lint_rule.h"
 #include "common/analysis/text_structure_lint_rule.h"
 #include "common/analysis/token_stream_lint_rule.h"
-#include "verilog/analysis/lint_rule_registry.h"
+#include "verilog/analysis/descriptions.h"
 
 namespace verilog {
 
@@ -41,6 +42,12 @@ struct RuleSetting {
 // Error to be shown when an invalid flag is
 // encountered while parsing a configuration
 inline constexpr absl::string_view kInvalidFlagMessage = "[ERR] Invalid flag";
+
+// Warning to be shown when we parse a configuration file that configures the
+// same rule more than once.
+inline constexpr absl::string_view kRepeatedFlagMessage =
+    "[WARN] Repeated flag in the configuration. Last provided value will be "
+    "used";
 
 // Warning to be shown when an stray comma is
 // encountered while parsing a configuration
@@ -75,7 +82,11 @@ struct RuleBundle {
   // typically that would be a comma or newline.
   bool ParseConfiguration(absl::string_view text, char separator,
                           std::string *error);
-  std::string UnparseConfiguration(char separator) const;
+  // Unparse the rules structure back to a string. Separator between rules
+  // is 'separator', typically that would be a comma or newline. The String
+  // is constructed by iterrating over the map, with 'reverse=true' used to
+  // construct the string in reverse order.
+  std::string UnparseConfiguration(char separator, bool reverse = true) const;
 };
 
 // Pair of functions that perform stringification and destringification
@@ -177,9 +188,6 @@ class LinterConfiguration {
   // Constructor has no rules enabled by default;
   LinterConfiguration() = default;
 
-  // This is copy-able.
-  LinterConfiguration(const LinterConfiguration &) = default;
-
   void TurnOn(const analysis::LintRuleId &rule) {
     configuration_[rule] = {true, ""};
   }
@@ -204,6 +212,9 @@ class LinterConfiguration {
   // Updates LinterConfiguration to enabled/disable all lint rules
   // in rule_bundle
   void UseRuleBundle(const RuleBundle &rule_bundle);
+
+  // Gets a rule_bundle of the LinterConfiguration
+  void GetRuleBundle(RuleBundle *rule_bundle) const;
 
   // Adjust set of active rules based on the filename.
   void UseProjectPolicy(const ProjectPolicy &policy,

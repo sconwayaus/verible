@@ -1,7 +1,6 @@
 workspace(name = "com_google_verible")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 http_archive(
     name = "rules_license",
@@ -15,10 +14,10 @@ http_archive(
 # Bazel platform rules, needed as dependency to absl.
 http_archive(
     name = "platforms",
-    sha256 = "5308fc1d8865406a49427ba24a9ab53087f17f5266a7aabbfc28823f3916e1ca",
+    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz",
     ],
 )
 
@@ -44,9 +43,9 @@ http_archive(
     patches = [
         "//bazel:absl.patch",
     ],
-    sha256 = "987ce98f02eefbaf930d6e38ab16aa05737234d7afbab2d5c4ea7adbe50c28ed",
-    strip_prefix = "abseil-cpp-20230802.1",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20230802.1.tar.gz"],
+    sha256 = "338420448b140f0dfd1a1ea3c3ce71b3bc172071f24f4d9a57d59b45037da440",
+    strip_prefix = "abseil-cpp-20240116.0",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20240116.0.tar.gz"],
 )
 
 http_archive(
@@ -74,7 +73,7 @@ http_archive(
 # External tools needed
 #
 
-# 'make install' equivalent rule
+# 'make install' equivalent rule 2023-02-21
 http_archive(
     name = "com_github_google_rules_install",
     # The installer uses an option -T that is not available on MacOS, but
@@ -82,9 +81,9 @@ http_archive(
     # Upstream bug https://github.com/google/bazel_rules_install/issues/31
     patch_args = ["-p1"],
     patches = ["//bazel:installer.patch"],
-    sha256 = "880217b21dbd40928bbe3bca3d97bd4de7d70d5383665ec007d7e1aac41d9739",
-    strip_prefix = "bazel_rules_install-5ae7c2a8d22de2558098e3872fc7f3f7edc61fb4",
-    urls = ["https://github.com/google/bazel_rules_install/archive/5ae7c2a8d22de2558098e3872fc7f3f7edc61fb4.zip"],
+    sha256 = "aba3c1ae179beb92c1fc4502d66d7d7c648f90eb51897aa4b0ae4a76ce225eec",
+    strip_prefix = "bazel_rules_install-6001facc1a96bafed0e414a529b11c1819f0cdbe",
+    urls = ["https://github.com/google/bazel_rules_install/archive/6001facc1a96bafed0e414a529b11c1819f0cdbe.zip"],
 )
 
 load("@com_github_google_rules_install//:deps.bzl", "install_rules_dependencies")
@@ -94,17 +93,6 @@ install_rules_dependencies()
 load("@com_github_google_rules_install//:setup.bzl", "install_rules_setup")
 
 install_rules_setup()
-
-# Need to load before rules_flex/rules_bison to make sure
-# win_flex_bison is the chosen toolchain on Windows
-load("//bazel:win_flex_bison.bzl", "win_flex_configure")
-
-win_flex_configure(
-    name = "win_flex_bison",
-    sha256 = "8d324b62be33604b2c45ad1dd34ab93d722534448f55a16ca7292de32b6ac135",
-    # bison 3.8.2, flex 2.6.4
-    url = "https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip",
-)
 
 http_archive(
     name = "rules_m4",
@@ -137,12 +125,28 @@ load("@rules_bison//bison:bison.bzl", "bison_register_toolchains")
 
 bison_register_toolchains()
 
+# We, but also protobuf needs zlib. Make sure we define it first.
+http_archive(
+    name = "zlib",
+    build_file = "//bazel:zlib.BUILD",
+    sha256 = "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+    strip_prefix = "zlib-1.3.1",
+    urls = [
+        "https://zlib.net/zlib-1.3.1.tar.gz",
+        "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+    ],
+)
+
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "9bd87b8280ef720d3240514f884e56a712f2218f0d693b48050c836028940a42",
-    strip_prefix = "protobuf-25.1",
+    patch_args = ["-p1"],
+    patches = [
+        "//bazel:proto-fix-uninitialized-value.patch",
+    ],
+    sha256 = "8ff511a64fc46ee792d3fe49a5a1bcad6f7dc50dfbba5a28b0e5b979c17f9871",
+    strip_prefix = "protobuf-25.2",
     urls = [
-        "https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/releases/download/v25.2/protobuf-25.2.tar.gz",
     ],
 )
 
@@ -159,73 +163,28 @@ http_archive(
     ],
 )
 
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 
 rules_proto_dependencies()
-
-rules_proto_toolchains()
-
-http_archive(
-    name = "rules_python",
-    sha256 = "778197e26c5fbeb07ac2a2c5ae405b30f6cb7ad1f5510ea6fdac03bded96cc6f",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_python/releases/download/0.2.0/rules_python-0.2.0.tar.gz",
-        "https://github.com/bazelbuild/rules_python/releases/download/0.2.0/rules_python-0.2.0.tar.gz",
-    ],
-)
 
 http_archive(
     name = "jsonhpp",
     build_file = "//bazel:jsonhpp.BUILD",
-    sha256 = "081ed0f9f89805c2d96335c3acfa993b39a0a5b4b4cef7edb68dd2210a13458c",
-    strip_prefix = "json-3.10.2",
+    sha256 = "0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406",
+    strip_prefix = "json-3.11.3",
     urls = [
-        "https://github.com/nlohmann/json/archive/refs/tags/v3.10.2.tar.gz",
+        "https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz",
     ],
 )
 
+# 2024-02-06
 http_archive(
-    name = "python_six",
-    build_file = "//bazel:python_six.BUILD",
-    sha256 = "30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259",
-    strip_prefix = "six-1.15.0",
-    urls = [
-        "https://files.pythonhosted.org/packages/6b/34/415834bfdafca3c5f451532e8a8d9ba89a21c9743a0c59fbd0205c7f9426/six-1.15.0.tar.gz",
-    ],
+    name = "rules_compdb",
+    sha256 = "70232adda61e89a4192be43b4719d35316ed7159466d0ab4f3da0ecb1fbf00b2",
+    strip_prefix = "bazel-compilation-database-fa872dd80742b3dccd79a711f52f286cbde33676",
+    urls = ["https://github.com/grailbio/bazel-compilation-database/archive/fa872dd80742b3dccd79a711f52f286cbde33676.tar.gz"],
 )
 
-http_archive(
-    name = "python_anytree",
-    build_file = "//bazel:python_anytree.BUILD",
-    sha256 = "79ee0cc74456950003287b0b5c7b76b7d09435563a31d9e553da484325043e1f",
-    strip_prefix = "anytree-2.8.0",
-    urls = [
-        "https://github.com/c0fec0de/anytree/archive/2.8.0.tar.gz",
-    ],
-)
+load("@rules_compdb//:deps.bzl", "rules_compdb_deps")
 
-# 2022-09-19
-http_archive(
-    name = "com_grail_bazel_compdb",
-    sha256 = "a3ff6fe238eec8202270dff75580cba3d604edafb8c3408711e82633c153efa8",
-    strip_prefix = "bazel-compilation-database-940cedacdb8a1acbce42093bf67f3a5ca8b265f7",
-    urls = ["https://github.com/grailbio/bazel-compilation-database/archive/940cedacdb8a1acbce42093bf67f3a5ca8b265f7.tar.gz"],
-)
-
-load("@com_grail_bazel_compdb//:deps.bzl", "bazel_compdb_deps")
-
-bazel_compdb_deps()
-
-# zlib is imported through protobuf. Make the dependency explicit considering
-# it's used outside protobuf.
-maybe(
-    http_archive,
-    name = "zlib",
-    build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-    sha256 = "b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30",
-    strip_prefix = "zlib-1.2.13",
-    urls = [
-        "https://zlib.net/zlib-1.2.13.tar.gz",
-        "https://zlib.net/fossils/zlib-1.2.13.tar.gz",
-    ],
-)
+rules_compdb_deps()

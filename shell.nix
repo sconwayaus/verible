@@ -5,27 +5,14 @@
 { pkgs ? import <nixpkgs> {} }:
 let
   verible_used_stdenv = pkgs.stdenv;
-
-  # Alternatively, use ccache stddev, so after bazel clean
-  # it is much cheaper to rebuild the world.
-  #
-  # This requires that you add a line to your ~/.bazelrc
-  # echo "build --sandbox_writable_path=$HOME/.cache/ccache" >> ~/.bazelrc
-  # Works on nixos, but noticed issues with just nix package manager.
-  #verible_used_stdenv = pkgs.ccacheStdenv;
-
-  # Testing with specific compilers
   #verible_used_stdenv = pkgs.gcc13Stdenv;
-
-  # Using clang stdenv does not work yet out of the box yet
-  # https://github.com/NixOS/nixpkgs/issues/216047
-  #verible_used_stdenv = pkgs.clang13Stdenv;
+  #verible_used_stdenv = pkgs.clang17Stdenv;
 in
 verible_used_stdenv.mkDerivation {
   name = "verible-build-environment";
   buildInputs = with pkgs;
     [
-      bazel_5
+      bazel_6
       jdk11
       git
 
@@ -37,6 +24,9 @@ verible_used_stdenv.mkDerivation {
       python3Packages.mdutils
       ripgrep
 
+      # To manually run export_json_examples
+      python3Packages.anytree
+
       # For using --//bazel:use_local_flex_bison if desired
       flex
       bison
@@ -46,7 +36,15 @@ verible_used_stdenv.mkDerivation {
 
       # Ease development
       lcov              # coverage html generation.
-      clang-tools_14    # clang-format, clang-tidy
       bazel-buildtools  # buildifier
+
+      clang-tools_17    # For clang-tidy; clangd
     ];
+
+  shellHook = ''
+      # We choose the last clang-format that produces the same result
+      # as the one used on the github CI (newer than v15 arrange some things
+      # slightly differently, so would result in a conflict).
+      export CLANG_FORMAT=${pkgs.clang-tools_15}/bin/clang-format
+  '';
 }
