@@ -58,9 +58,8 @@ const LintRuleDescriptor &PortNameSuffixRule::GetDescriptor() {
               "\"output_suffixes\" and \"inout_suffixes\", which "
               "contain lists of ORed suffixes with the pipe-symbol(|).\n"
               "Interface port suffix are controlled by "
-              "\"interface_suffix_style\". \"_modport\" will check that "
-              "the interface name ends an underscore, followed by the "
-              "mod port."
+              "\"interface_suffix_style\". \"modport\" will check that "
+              "the interface name ends with the mod port name."
               "Empty configuration: no style enforcement.",
       .param = {{"input_suffixes", "_i|_ni|_pi",
                  "A list of allowed input port name suffixes."},
@@ -68,7 +67,7 @@ const LintRuleDescriptor &PortNameSuffixRule::GetDescriptor() {
                  "A list of allowed output port name suffixes."},
                  {"inout_suffixes", "_io|_nio|_pio",
                  "A list of allowed inout port name suffixes."},
-                 {"interface_suffix_style", "_modport",
+                 {"interface_suffix_style", "modport",
                  "Sets the interface port name suffix style."}},
   };
   return d;
@@ -86,7 +85,7 @@ PortNameSuffixRule::PortNameSuffixRule() : verible::SyntaxTreeLintRule() {
   input_suffixes = {"_i", "_ni", "_pi"};
   output_suffixes = {"_o", "_no", "_po"};
   inout_suffixes = {"_io", "_nio", "_pio"};
-  interface_suffix_style = "_modport";
+  interface_suffix_style = "modport";
 
   suffixes.clear();
   suffixes["input"] = input_suffixes;
@@ -131,7 +130,7 @@ void PortNameSuffixRule::HandleSymbol(const Symbol &symbol,
       suffix_list = suffixes.at(suffix_type);
     } else if(interface_header_node) {
       suffix_type = "interface";
-      if(interface_suffix_style == "_modport") {
+      if(interface_suffix_style == "modport") {
         const auto *modport_leaf = GetInterfaceModPortFromInterfaceHeaderNode(*interface_header_node);
         if(modport_leaf) {
           absl::string_view modport_suffix = modport_leaf->get().text();
@@ -168,16 +167,7 @@ bool PortNameSuffixRule::IsSuffixOk(const absl::string_view &name, const std::se
       continue;
     }
 
-    absl::string_view::size_type idx = name.rfind(suffix, name_length);
-
-    if(idx == std::string::npos) {
-      // Didn't find the suffix
-      continue;
-    }
-
-    absl::string_view::size_type expected_idx = name_length - suffix_length;
-
-    if(expected_idx == idx) {
+    if(name.ends_with(suffix)) {
       return true;
     }
   }
