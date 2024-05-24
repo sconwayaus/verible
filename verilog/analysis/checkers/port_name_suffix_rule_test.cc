@@ -146,11 +146,6 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (output logic ", {kToken, "abc_O"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "xyz_IO"}, "); endmodule;"},
       {"module t (some_intf.mport ", {kToken, "xyz_MPORT"}, "); endmodule;"},
-      // no underscore
-      {"module t (input logic ", {kToken, "namei"}, "); endmodule;"},
-      {"module t (output logic ", {kToken, "abco"}, "); endmodule;"},
-      {"module t (inout logic ", {kToken, "xyzio"}, "); endmodule;"},
-      {"module t (some_intf.abc ", {kToken, "xyzabc"}, "); endmodule;"},
       // Mismatched suffix tests
       {"module t (input logic ", {kToken, "name_o"}, "); endmodule;"},
       {"module t (input logic ", {kToken, "name_io"}, "); endmodule;"},

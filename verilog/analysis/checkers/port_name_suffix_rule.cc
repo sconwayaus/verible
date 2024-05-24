@@ -68,7 +68,7 @@ const LintRuleDescriptor &PortNameSuffixRule::GetDescriptor() {
                  "A list of allowed output port name suffixes."},
                  {"inout_suffixes", "_io|_nio|_pio",
                  "A list of allowed inout port name suffixes."},
-                 {"interface_suffix_style", "_modport", 
+                 {"interface_suffix_style", "_modport",
                  "Sets the interface port name suffix style."}},
   };
   return d;
@@ -80,8 +80,8 @@ static const Matcher &PortMatcher() {
 }
 
 PortNameSuffixRule::PortNameSuffixRule() : verible::SyntaxTreeLintRule() {
-  
-  // FIXME: This sucks, as we now have 2 sources of truth, here and 
+
+  // FIXME: This is not ideal as we now have 2 sources of truth, here and
   // in GetDescriptor().param above
   input_suffixes = {"_i", "_ni", "_pi"};
   output_suffixes = {"_o", "_no", "_po"};
@@ -97,8 +97,6 @@ PortNameSuffixRule::PortNameSuffixRule() : verible::SyntaxTreeLintRule() {
 void PortNameSuffixRule::Violation(absl::string_view direction,
                                    const TokenInfo &token,
                                    const SyntaxTreeContext &context) {
-  // std::cout << "Violation token: " << token.text() << "\n";
-
   if (direction == "input") {
     violations_.insert(LintViolation(token, kMessageIn, context));
   } else if (direction == "output") {
@@ -116,104 +114,70 @@ void PortNameSuffixRule::HandleSymbol(const Symbol &symbol,
                                       const SyntaxTreeContext &context) {
   verible::matcher::BoundSymbolManager manager;
   if (PortMatcher().Matches(symbol, &manager)) {
-
-    // std::cout << "\n\n" << verible::RawTreePrinter(symbol);
-
     const auto *interface_header_node = GetInterfaceHeaderNodeFromPortDeclaration(symbol);
     const auto *direction_leaf = GetDirectionFromPortDeclaration(symbol);
-    
+
     absl::string_view suffix_type;
 
     std::set<absl::string_view> suffix_list;
     if(direction_leaf) {
       suffix_type = direction_leaf->get().text();
 
-      // std::cout << "Found Direction Leaf, direction = " << suffix_type << "\n";
-
-      if(suffixes.empty()) {
-        // std::cout << "Empty\n";
-      }
-      else {
-        // std::cout << "NOT Empty\n";
-      }
-
+      CHECK(!suffixes.empty());
       if (suffixes.find(suffix_type) == suffixes.end()) {
-        // std::cout << "*** Didn't find suffixes\n";
         return;
       }
 
-      // std::cout << "FOUND SUFFIX\n";
-
       suffix_list = suffixes.at(suffix_type);
-      // std::cout << "FOUND SUFFIX 2\n";
     } else if(interface_header_node) {
       suffix_type = "interface";
       if(interface_suffix_style == "_modport") {
         const auto *modport_leaf = GetInterfaceModPortFromInterfaceHeaderNode(*interface_header_node);
-        // std::cout << "Get Leaf\n";
         if(modport_leaf) {
-          absl::string_view modport = modport_leaf->get().text();
-          std::string modport_suffix = "_";
-          modport_suffix.append(std::string(modport));
+          absl::string_view modport_suffix = modport_leaf->get().text();
           suffix_list.insert(modport_suffix);
-        } else {
-          // std::cout << "no modport found" << "\n";
         }
       }
     } else {
       // Unknown
-      // std::cout << "Unknown port" << "\n";
       return;
     }
-    
+
     const auto *identifier_leaf = GetIdentifierFromPortDeclaration(symbol);
     const auto token = identifier_leaf->get();
     const auto name = ABSL_DIE_IF_NULL(identifier_leaf)->get().text();
 
-    if(IsSuffixOk(name, suffix_list)) {
-      return;
+    if(!IsSuffixOk(name, suffix_list)) {
+      // No match found, report a rule violation
+      Violation(suffix_type, token, context);
     }
-
-    // No match found, report a rule violation
-    Violation(suffix_type, token, context);
   }
 }
 
 bool PortNameSuffixRule::IsSuffixOk(const absl::string_view &name, const std::set<absl::string_view> &suffix_list) {
   if(suffix_list.empty()) {
     // No style enforcement
-    // std::cout << "No style enforcment\n";
     return true;
   }
 
   absl::string_view::size_type name_length = name.length();
-  // std::cout << "length: " << name_length << "\n";
 
   for (const auto& suffix : suffix_list) {
-    absl::string_view::size_type idx = name.rfind(suffix);
-    
-    if(idx == std::string::npos) {
-      // std::cout << "IsSuffixOk: npos\n";
+    absl::string_view::size_type suffix_length = suffix.length();
+    if(name_length <= suffix_length) {
       continue;
     }
 
-    absl::string_view::size_type expected_name_length = suffix.length() + idx;
-    if(expected_name_length == name_length) {
-      
-      // if(name == "_io") { 
-        // std::cout << "expected_name_length: " << expected_name_length << "\n";
-        // std::cout << "name_length: " << name_length << "\n";
-        // std::cout << "idx: " << idx << "\n";
-      // }
+    absl::string_view::size_type idx = name.rfind(suffix, name_length);
 
-      if(idx == 0) {
-        // The string needs to be more than the suffix. This should raise 
-        // a different Violation
-        return false;
-      }
+    if(idx == std::string::npos) {
+      // Didn't find the suffix
+      continue;
+    }
 
-      // Found one of the listed suffix
-      // std::cout << suffix << "\n";
+    absl::string_view::size_type expected_idx = name_length - suffix_length;
+
+    if(expected_idx == idx) {
       return true;
     }
   }
@@ -221,9 +185,9 @@ bool PortNameSuffixRule::IsSuffixOk(const absl::string_view &name, const std::se
   return false;
 }
 
-void PortNameSuffixRule::ParseViloationString(const absl::string_view direction, 
+void PortNameSuffixRule::ParseViloationString(const absl::string_view direction,
     std::set<absl::string_view> suffix_list, std::string *msg) const {
-  
+
   msg->assign(std::string(direction));
   msg->append(" port names must end with one of the folowing: ");
 
