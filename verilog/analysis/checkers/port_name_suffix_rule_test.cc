@@ -16,6 +16,7 @@
 
 #include <initializer_list>
 
+#include "absl/strings/match.h"
 #include "common/analysis/linter_test_utils.h"
 #include "common/analysis/syntax_tree_linter_test_utils.h"
 #include "gtest/gtest.h"
@@ -27,6 +28,7 @@ namespace analysis {
 namespace {
 
 using verible::LintTestCase;
+using verible::RunConfiguredLintTestCases;
 using verible::RunLintTestCases;
 
 // Tests that PortNameSuffixRule correctly accepts valid names.
@@ -60,9 +62,9 @@ TEST(PortNameSuffixRuleTest, AcceptTests) {
 
       {"module t (some_interface.a b_a); endmodule;"},
       {"module t (some_interface.some_mport c_some_mport); endmodule;"},
-      {"module t (some_interface intf); endmodule;"},   // interface without modport (FIXME: is this even valid?)
-      {"module t (interface d); endmodule;"},           // A generic interface
-      
+      {"module t (some_interface intf); endmodule;"},  // interface without
+                                                       // modport
+      {"module t (interface d); endmodule;"},          // A generic interface
 
       {"module t (input logic name_i,\n"
        "output logic abc_o,\n"
@@ -115,12 +117,6 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (output logic ", {kToken, "name_pi"}, "); endmodule;"},
       {"module t (output logic ", {kToken, "name_pio"}, "); endmodule;"},
 
-      {"module t (some_interface.a ", {kToken, "b_c"}, "); endmodule;"},
-      {"module t (some_interface.d ", {kToken, "e"}, "); endmodule;"},
-      {"module t (some_interface.f ", {kToken, "g_"}, "); endmodule;"},
-      {"module t (some_interface.h ", {kToken, "_h_i"}, "); endmodule;"},
-      {"module t (some_interface.j ", {kToken, "j_k"}, "); endmodule;"},
-
       {"module t (input logic ",
        {kToken, "name"},
        ",\n"
@@ -145,7 +141,7 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (input logic ", {kToken, "name_I"}, "); endmodule;"},
       {"module t (output logic ", {kToken, "abc_O"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "xyz_IO"}, "); endmodule;"},
-      {"module t (some_intf.mport ", {kToken, "xyz_MPORT"}, "); endmodule;"},
+
       // Mismatched suffix tests
       {"module t (input logic ", {kToken, "name_o"}, "); endmodule;"},
       {"module t (input logic ", {kToken, "name_io"}, "); endmodule;"},
@@ -153,11 +149,55 @@ TEST(PortNameSuffixRuleTest, RejectTests) {
       {"module t (output logic ", {kToken, "name_io"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "name_i"}, "); endmodule;"},
       {"module t (inout logic ", {kToken, "name_o"}, "); endmodule;"},
+  };
+  RunLintTestCases<VerilogAnalyzer, PortNameSuffixRule>(kTestCases);
+}
+
+TEST(PortNameSuffixRuleTest, InterfaceModPort) {
+  constexpr int kToken = SymbolIdentifier;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      {"module t (some_interface.a b_a); endmodule;"},
+      {"module t (some_interface.some_mport c_some_mport); endmodule;"},
+      {"module t (some_interface intf); endmodule;"},  // interface without
+                                                       // modport
+      {"module t (interface d); endmodule;"},          // A generic interface
+
+      {"module t (some_interface.a ", {kToken, "b_c"}, "); endmodule;"},
+      {"module t (some_interface.d ", {kToken, "e"}, "); endmodule;"},
+      {"module t (some_interface.f ", {kToken, "g_"}, "); endmodule;"},
+      {"module t (some_interface.h ", {kToken, "_h_i"}, "); endmodule;"},
+      {"module t (some_interface.j ", {kToken, "j_k"}, "); endmodule;"},
+      {"module t (some_intf.mport ", {kToken, "xyz_MPORT"}, "); endmodule;"},
       {"module t (some_intf.abc ", {kToken, "name_i"}, "); endmodule;"},
       {"module t (some_intf.abc ", {kToken, "name_o"}, "); endmodule;"},
       {"module t (some_intf.abc ", {kToken, "name_io"}, "); endmodule;"},
   };
-  RunLintTestCases<VerilogAnalyzer, PortNameSuffixRule>(kTestCases);
+  RunConfiguredLintTestCases<VerilogAnalyzer, PortNameSuffixRule>(
+      kTestCases, "enable_interface_modport_suffix:true");
+}
+
+TEST(PortNameSuffixRuleTest, Configuration) {
+  PortNameSuffixRule rule;
+  absl::Status status;
+  EXPECT_TRUE((status = rule.Configure("")).ok()) << status.message();
+  EXPECT_TRUE(
+      (status = rule.Configure("input_suffixes:_some_suffix0|_some_suffix1"))
+          .ok())
+      << status.message();
+  EXPECT_TRUE(
+      (status = rule.Configure("output_suffixes:_some_suffix0|_some_suffix1"))
+          .ok())
+      << status.message();
+  EXPECT_TRUE(
+      (status = rule.Configure("inout_suffixes:_some_suffix0|_some_suffix1"))
+          .ok())
+      << status.message();
+  EXPECT_TRUE(
+      (status = rule.Configure("enable_interface_modport_suffix:true")).ok())
+      << status.message();
+
+  EXPECT_FALSE((status = rule.Configure("foo:string")).ok());
+  EXPECT_TRUE(absl::StrContains(status.message(), "supported parameter"));
 }
 
 }  // namespace
