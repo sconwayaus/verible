@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as vscodelc from 'vscode-languageclient/node';
 import { checkAndDownloadBinaries } from './download-ls';
-import { initProjectFileList } from './projectFileList';
+import { initProjectFileList } from './project_filelist';
 
 // Global object to dispose of previous language clients.
 let client: undefined | vscodelc.LanguageClient = undefined;
