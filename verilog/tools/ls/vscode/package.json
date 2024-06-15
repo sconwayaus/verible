@@ -48,19 +48,25 @@
           "description": "Arguments for verible-verilog-ls server.",
           "order": 1
         },
+        "verible.projectFileList.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto generation of verible.filelist for project-wide symbol discovery.",
+          "order": 2
+        },
         "verible.projectFileList.includeGlobPattern": {
           "type": "string",
           "default": "{**/*.sv,**/*.svh,**/*.v}",
           "scope": "machine-overridable",
           "description": "Include file glob pattern for creating a project file list (verible.filelist).",
-          "order": 2
+          "order": 3
         },
         "verible.projectFileList.excludeGlobPattern": {
           "type": "string",
           "default": "",
           "scope": "machine-overridable",
           "description": "Exclude file glob pattern for creating a project file list (verible.filelist).",
-          "order": 3
+          "order": 4
         }
       }
     },

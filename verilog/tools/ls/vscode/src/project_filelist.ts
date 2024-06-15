@@ -13,7 +13,14 @@ async function createProjectFileList() {
     if (vscode.workspace.workspaceFolders === undefined) {
         return;
     }
+
     const config = vscode.workspace.getConfiguration('verible.projectFileList');
+
+    const enable = await config.get('enable') as boolean;
+    if (!enable) {
+        return;
+    }
+
     const includeGlobPattern = await config.get('includeGlobPattern') as string;
     const excludeGlobPattern = await config.get('excludeGlobPattern') as string;
     const filelist = await vscode.workspace.findFiles(includeGlobPattern, excludeGlobPattern);
