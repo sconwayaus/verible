@@ -22,9 +22,7 @@ jobs:
 
 
   VerifyFormatting:
-    container: ubuntu:jammy
-    runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
-
+    runs-on: ubuntu-24.04
     steps:
 
     - name: Cancel previous
@@ -39,13 +37,16 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        apt -qqy update
-        apt -qq -y install clang-format-15 git
-        clang-format-15 --version
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 17
+        sudo apt-get install clang-format-17
+        go install github.com/bazelbuild/buildtools/buildifier@latest
+        echo "PATH=$PATH:$(go env GOPATH)/bin/" >> $GITHUB_ENV
 
     - name: Run formatting style check
       run: |
-        CLANG_FORMAT=clang-format-15 ./.github/bin/run-clang-format.sh
+        CLANG_FORMAT=clang-format-17 ./.github/bin/run-clang-format.sh
         ./.github/bin/check-potential-problems.sh
 
     - name: 📤 Upload performance graphs
@@ -124,6 +125,47 @@ jobs:
         name: "diag"
         path: "**/plot_*.svg"
 
+  RunBantBuildCleaneer:
+    # Running http://bant.build/ to check all dependencies in BUILD files.
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Project genrules
+        run: |
+          # Fetch all dependency and run genrules for bant to see every file
+          # that makes it into the compile.
+          bazel fetch ...
+          bazel build \
+              //common/analysis:command-file-lexer \
+              //common/lsp:jcxxgen-testfile-gen \
+              //common/lsp:lsp-protocol-gen \
+              //common/util:version-header \
+              //verilog/CST:verilog-nonterminals-foreach-gen  \
+              //verilog/parser:gen-verilog-token-enum \
+              //verilog/parser:verilog-lex \
+              //verilog/parser:verilog-parse-interface \
+              //verilog/parser:verilog-y \
+              //verilog/parser:verilog-y-final \
+              //verilog/tools/kythe:verilog-extractor-indexing-fact-type-foreach-gen
+
+      - name: Get Bant
+        run: |
+          # TODO: provide this as action where we simply say with version=...
+          VERSION="v0.1.3"
+          STATIC_VERSION="bant-${VERSION}-linux-static-x86_64"
+          wget "https://github.com/hzeller/bant/releases/download/${VERSION}/${STATIC_VERSION}.tar.gz"
+          tar xvzf "${STATIC_VERSION}.tar.gz"
+          mkdir -p bin
+          ln -sf ../"${STATIC_VERSION}/bin/bant" bin/
+          bin/bant -V
+
+      - name: Run bant build-cleaner
+        run: |
+          bin/bant dwyu ...
 
   Check:
     container: ubuntu:jammy
@@ -435,7 +477,7 @@ jobs:
         apt -qq -y install npm nodejs
 
   WindowsBuild:
-    runs-on: windows-2022
+    runs-on: windows-2019
     steps:
 
     - uses: actions/checkout@v3
@@ -459,6 +501,7 @@ jobs:
       run: |
         choco install bazel --force --version=6.4.0
         choco install winflexbison3
+        choco install llvm --allow-downgrade --version=16.0.6
 
     - name: Debug bazel directory settings
       # We need to explicitly call the bazel binary from choco, otherwise
