@@ -525,7 +525,7 @@ jobs:
 
     - name: Prepare release
       run: |
-        $VERSION = git describe --match=v*
+        $VERSION = "v0.1_my_master"
         C:/ProgramData/chocolatey/lib/bazel/bazel.exe run -c opt :install -- "c:/verible-${VERSION}-win64"
         7z a "verible-${VERSION}-win64.zip" "c:/verible-${VERSION}-win64"
 
@@ -568,10 +568,10 @@ jobs:
         git config --local user.email "$BOT_EMAIL"
 
         # Create a tag of form v0.0-183-gdf2b162-20191112132344
-        TAG="${TAG:-$(git describe --match=v*)}"
+        TAG="v0.1_my_master"
 
-        git tag "$TAG" || true
-        echo "TAG=$TAG" >> $GITHUB_ENV
+        # git tag "$TAG" || true
+        # echo "TAG=$TAG" >> $GITHUB_ENV
 
         ls -lah artifact
 
@@ -584,20 +584,20 @@ jobs:
         overwrite: true
         file_glob: true
 
-    - name: Publish VSCode extension
-      env:
-        VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
-      run: |
-        cd verilog/tools/ls/vscode
-        npm install
-        # install vsce globally
-        npm install -g @vscode/vsce
+    # - name: Publish VSCode extension
+    #   env:
+    #     VSC_MARKETPLACE_TOKEN: ${{ secrets.VSC_MARKETPLACE_TOKEN }}
+    #   run: |
+    #     cd verilog/tools/ls/vscode
+    #     npm install
+    #     # install vsce globally
+    #     npm install -g @vscode/vsce
 
-        # Patch the JSON file to contain our current git tag+commit
-        VERSION=$(git describe | sed 's|v\([^-]\+\)-\([[:digit:]]\+\).*|\1.\2|')
-        sed -i 's|\(.*version.*\): "\([^"]\+\)"|\1: "'${VERSION}'"|g' package.json
-        sed -i 's|\(.*tag.*\): "\([^"]\+\)"|\1: "'${TAG}'"|g' package.json
-        vsce publish -p ${VSC_MARKETPLACE_TOKEN}
+    #     # Patch the JSON file to contain our current git tag+commit
+    #     VERSION=$(git describe | sed 's|v\([^-]\+\)-\([[:digit:]]\+\).*|\1.\2|')
+    #     sed -i 's|\(.*version.*\): "\([^"]\+\)"|\1: "'${VERSION}'"|g' package.json
+    #     sed -i 's|\(.*tag.*\): "\([^"]\+\)"|\1: "'${TAG}'"|g' package.json
+    #     vsce publish -p ${VSC_MARKETPLACE_TOKEN}
 
   GhPages:
     name: Build and deploy GitHub pages
