@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <set>
 
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
@@ -132,6 +133,17 @@ ConfigValueSetter SetString(std::string* value) {
   return [value](string_view v) {
            value->assign(v.data(), v.length());
            return absl::OkStatus();
+         };
+}
+
+ConfigValueSetter SetStringSetOr(std::set<absl::string_view> *value) {
+  return [value](string_view v) {
+          value->clear();
+          auto elements = absl::StrSplit(v, '|');
+          for(auto element : elements) {
+            value->insert(element);
+          }
+          return absl::OkStatus();
          };
 }
 

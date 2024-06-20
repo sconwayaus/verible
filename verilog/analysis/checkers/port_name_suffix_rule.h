@@ -15,6 +15,7 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_SUFFIX_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_SUFFIX_RULE_H_
 
+#include <map>
 #include <set>
 
 #include "absl/strings/string_view.h"
@@ -36,7 +37,11 @@ class PortNameSuffixRule : public verible::SyntaxTreeLintRule {
  public:
   using rule_type = verible::SyntaxTreeLintRule;
 
+  PortNameSuffixRule();
+
   static const LintRuleDescriptor &GetDescriptor();
+
+  absl::Status Configure(absl::string_view configuration) final;
 
   void HandleSymbol(const verible::Symbol &symbol,
                     const verible::SyntaxTreeContext &context) final;
@@ -44,11 +49,23 @@ class PortNameSuffixRule : public verible::SyntaxTreeLintRule {
   verible::LintRuleStatus Report() const final;
 
  private:
+  std::set<absl::string_view> input_suffixes;
+  std::set<absl::string_view> output_suffixes;
+  std::set<absl::string_view> inout_suffixes;
+  bool enable_interface_modport_suffix;
+  std::map<absl::string_view, std::set<absl::string_view>> suffixes;
+  std::string kMessageIn;
+  std::string kMessageOut;
+  std::string kMessageInOut;
+
   // Helper functions
+  bool IsSuffixOk(const absl::string_view &name,
+                  const std::set<absl::string_view> &suffix_list);
   void Violation(absl::string_view direction, const verible::TokenInfo &token,
                  const verible::SyntaxTreeContext &context);
-  static bool IsSuffixCorrect(absl::string_view suffix,
-                              absl::string_view direction);
+  void ParseViloationString(const absl::string_view direction,
+                            std::set<absl::string_view> suffix_list,
+                            std::string *msg) const;
 
   // Violations
   std::set<verible::LintViolation> violations_;
