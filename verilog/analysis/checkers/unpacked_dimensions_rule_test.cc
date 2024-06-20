@@ -18,6 +18,7 @@
 
 #include "common/analysis/linter_test_utils.h"
 #include "common/analysis/syntax_tree_linter_test_utils.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "verilog/analysis/verilog_analyzer.h"
 #include "verilog/parser/verilog_token_enum.h"
@@ -26,10 +27,34 @@ namespace verilog {
 namespace analysis {
 namespace {
 
+using testing::HasSubstr;
 using verible::LintTestCase;
+using verible::RunConfiguredLintTestCases;
 using verible::RunLintTestCases;
 
-TEST(UnpackedDimensionsRuleTests, CheckRanges) {
+TEST(UnpackedDimensionsRuleTests, Configuration) {
+  UnpackedDimensionsRule rule;
+  absl::Status status;
+  EXPECT_TRUE((status = rule.Configure("")).ok()) << status.message();
+  EXPECT_TRUE((status = rule.Configure("range_order:big-endian")).ok())
+      << status.message();
+  EXPECT_TRUE((status = rule.Configure("range_order:little-endian")).ok())
+      << status.message();
+  EXPECT_TRUE((status = rule.Configure("allow_zero_based_range:true")).ok())
+      << status.message();
+  EXPECT_TRUE((status = rule.Configure("allow_zero_based_range:false")).ok())
+      << status.message();
+
+  EXPECT_FALSE((status = rule.Configure("foo:string")).ok());
+  EXPECT_THAT(status.message(), testing::HasSubstr("supported parameter"));
+
+  EXPECT_FALSE((status = rule.Configure("range_order:int")).ok());
+  EXPECT_THAT(status.message(),
+              testing::StrEq("range_order: Value can only be one of "
+                             "['big-endian', 'little-endian']; got 'int'"));
+}
+
+TEST(UnpackedDimensionsRuleTests, CheckRangesDefault) {
   // TODO(fangism): Check that violation message matches.
   constexpr int kScalar = TK_OTHER;
   constexpr int kOrder = TK_OTHER;
@@ -116,6 +141,192 @@ TEST(UnpackedDimensionsRuleTests, CheckRanges) {
       {"module test (input logic blah);", "endmodule", "module tb;",
        "  test test_i[0:3] (.blah (1'b0));", "endmodule"}};
   RunLintTestCases<VerilogAnalyzer, UnpackedDimensionsRule>(kTestCases);
+}
+
+TEST(UnpackedDimensionsRuleTests, CheckRangesAllowZeroBasedRange) {
+  // TODO(fangism): Check that violation message matches.
+  constexpr int kScalar = TK_OTHER;
+  constexpr int kOrder = TK_OTHER;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      // Test incorrect code
+      {""},
+      {"module foo; endmodule"},
+
+      // basic net declarations
+      {"wire w;"},
+      {"wire w [", {kScalar, "0:0"}, "];"},
+      {"wire w [", {kScalar, "1:0"}, "];"},
+      {"wire w [0:1];"},
+      {"wire w [", {kOrder, "2:1"}, "];"},
+      {"wire w [1:2];"},
+      {"wire w [", {kScalar, "z:0"}, "];"},
+      {"wire w [0:z];"},
+      {"wire w [1:z];"},     // inconclusive
+      {"wire w [4];"},       // good: scalar dimension
+      {"wire w [X];"},       // good: scalar dimension
+      {"wire w [N][M-2];"},  // good: scalar dimension
+      {"wire w [0:1][0:3];"},
+      {"wire w [0:1][", {kScalar, "3:0"}, "];"},
+      {"wire w [0:1][", {kOrder, "3:1"}, "];"},
+      {"wire w [", {kOrder, "1:0"}, "][0:3];"},
+      {"wire w [", {kScalar, "1:0"}, "][", {kScalar, "2:0"}, "];"},
+      {"wire w [6][", {kScalar, "2:0"}, "];"},
+      {"wire w [", {kScalar, "2:0"}, "][5];"},
+      {"wire w [6][", {kOrder, "2:1"}, "];"},
+      {"wire w [", {kOrder, "2:1"}, "][5];"},
+
+      // module-local nets
+      {"module m; wire w [", {kScalar, "0:0"}, "]; endmodule"},
+      {"module m; wire w [0:1]; endmodule"},
+      {"module m; wire w [", {kScalar, "1:0"}, "]; endmodule"},
+      {"module m; wire w [", {kOrder, "3:2"}, "]; endmodule"},
+      {"module m; wire w [1:1]; endmodule"},
+      {"module m; wire w [", {kScalar, "1:0"}, "][4]; endmodule"},
+
+      // module-ports
+      {"module m(input wire w [", {kScalar, "0:0"}, "]); endmodule"},
+      {"module m(input wire w [0:1]); endmodule"},
+      {"module m(input wire w [", {kScalar, "1:0"}, "]); endmodule"},
+      {"module m(input wire w [", {kOrder, "11:1"}, "]); endmodule"},
+      {"module m(input wire w [1:1]); endmodule"},
+      {"module m(input wire [1:0] w [", {kScalar, "1:0"}, "]); endmodule"},
+
+      // class members
+      {"class c; endclass"},
+      {"class c; logic l [", {kScalar, "0:0"}, "]; endclass"},
+      {"class c; logic l [0:1]; endclass"},
+      {"class c; logic l [", {kScalar, "1:0"}, "]; endclass"},
+      {"class c; logic l [1:1]; endclass"},
+      {"class c; logic l [", {kOrder, "2:1"}, "]; endclass"},
+      {"class c; logic l [1:2]; endclass"},
+
+      // struct members
+      {"struct { bit l [", {kScalar, "0:0"}, "]; } s;"},
+      {"struct { bit l [0:1]; } s;"},
+      {"struct { bit l [", {kScalar, "1:0"}, "]; } s;"},
+      {"struct { bit l [x:y]; } s;"},
+      {"struct { bit l [1:3]; } s;"},
+      {"struct { bit l [", {kOrder, "3:1"}, "]; } s;"},
+
+      // struct typedef members
+      {"typedef struct { bit l [", {kScalar, "0:0"}, "]; } s_s;"},
+      {"typedef struct { bit l [0:1]; } s_s;"},
+      {"typedef struct { bit l [", {kScalar, "1:0"}, "]; } s_s;"},
+      {"typedef struct { bit l [x:y]; } s_s;"},
+      {"typedef struct { bit l [2:2]; } s_s;"},
+      {"typedef struct { bit l [2:3]; } s_s;"},
+
+      // associative arrays
+      {"int some_array [bit];"},
+      {"int some_array [", {kScalar, "7:0"}, "];"},
+      // inner range is packed dimensions, should not be detected as unpacked
+      {"int some_array [bit [7:0]];"},
+      {"int some_array [bit [0:7]];"},
+
+      // array of instances
+      {"module test (input logic blah);", "endmodule", "module tb;",
+       "  test test_i[3:0] (.blah (1'b0));", "endmodule"},
+
+      {"module test (input logic blah);", "endmodule", "module tb;",
+       "  test test_i[0:3] (.blah (1'b0));", "endmodule"}};
+
+  RunConfiguredLintTestCases<VerilogAnalyzer, UnpackedDimensionsRule>(
+      kTestCases, "allow_zero_based_range:true");
+}
+
+TEST(UnpackedDimensionsRuleTests, CheckRangesLittleEndian) {
+  // TODO(fangism): Check that violation message matches.
+  constexpr int kScalar = TK_OTHER;
+  constexpr int kOrder = TK_OTHER;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      // Test incorrect code
+      {""},
+      {"module foo; endmodule"},
+
+      // basic net declarations
+      {"wire w;"},
+      {"wire w [", {kScalar, "0:0"}, "];"},
+      {"wire w [1:0];"},
+      {"wire w [", {kScalar, "0:1"}, "];"},
+      {"wire w [2:1];"},
+      {"wire w [", {kOrder, "1:2"}, "];"},
+      {"wire w [z:0];"},
+      {"wire w [", {kScalar, "0:z"}, "];"},
+      {"wire w [1:z];"},                   // inconclusive
+      {"wire w [", {kOrder, "4"}, "];"},   // bad: scalar dimension
+      {"wire w [", {kScalar, "X"}, "];"},  // bad: scalar dimension
+      {"wire w [",
+       {kScalar, "N"},
+       "][",
+       {kScalar, "M-2"},
+       "];"},  // bad: scalar dimension
+      {"wire w [", {kScalar, "0:1"}, "][", {kScalar, "0:3"}, "];"},
+      {"wire w [", {kScalar, "0:1"}, "][3:0];"},
+      {"wire w [", {kScalar, "0:1"}, "][3:1];"},
+      {"wire w [1:0][", {kScalar, "0:3"}, "];"},
+      {"wire w [1:0][2:0];"},
+      {"wire w [", {kScalar, "6"}, "][2:0];"},
+      {"wire w [2:0][", {kScalar, "5"}, "];"},
+      {"wire w [", {kScalar, "6"}, "][2:1];"},
+      {"wire w [2:1][", {kScalar, "5"}, "];"},
+
+      // module-local nets
+      {"module m; wire w [", {kScalar, "0:0"}, "]; endmodule"},
+      {"module m; wire w [", {kScalar, "0:1"}, "]; endmodule"},
+      {"module m; wire w [1:0]; endmodule"},
+      {"module m; wire w [3:2]; endmodule"},
+      {"module m; wire w [1:1]; endmodule"},
+      {"module m; wire w [1:0][", {kScalar, "4"}, "]; endmodule"},
+
+      // module-ports
+      {"module m(input wire w [", {kScalar, "0:0"}, "]); endmodule"},
+      {"module m(input wire w [", {kScalar, "0:1"}, "]); endmodule"},
+      {"module m(input wire w [1:0]); endmodule"},
+      {"module m(input wire w [11:1]); endmodule"},
+      {"module m(input wire w [1:1]); endmodule"},
+      {"module m(input wire [1:0] w [1:0]); endmodule"},
+
+      // class members
+      {"class c; endclass"},
+      {"class c; logic l [", {kScalar, "0:0"}, "]; endclass"},
+      {"class c; logic l [", {kScalar, "0:1"}, "]; endclass"},
+      {"class c; logic l [1:0]; endclass"},
+      {"class c; logic l [1:1]; endclass"},
+      {"class c; logic l [2:1]; endclass"},
+      {"class c; logic l [", {kOrder, "1:2"}, "]; endclass"},
+
+      // struct members
+      {"struct { bit l [", {kScalar, "0:0"}, "]; } s;"},
+      {"struct { bit l [", {kScalar, "0:1"}, "]; } s;"},
+      {"struct { bit l [1:0]; } s;"},
+      {"struct { bit l [x:y]; } s;"},
+      {"struct { bit l [", {kOrder, "1:3"}, "]; } s;"},
+      {"struct { bit l [3:1]; } s;"},
+
+      // struct typedef members
+      {"typedef struct { bit l [", {kScalar, "0:0"}, "]; } s_s;"},
+      {"typedef struct { bit l [", {kScalar, "0:1"}, "]; } s_s;"},
+      {"typedef struct { bit l [1:0]; } s_s;"},
+      {"typedef struct { bit l [x:y]; } s_s;"},
+      {"typedef struct { bit l [2:2]; } s_s;"},
+      {"typedef struct { bit l [", {kOrder, "2:3"}, "]; } s_s;"},
+
+      // associative arrays
+      {"int some_array [bit];"},
+      {"int some_array [7:0];"},
+      // inner range is packed dimensions, should not be detected as unpacked
+      {"int some_array [bit [7:0]];"},
+      {"int some_array [bit [0:7]];"},
+
+      // array of instances
+      {"module test (input logic blah);", "endmodule", "module tb;",
+       "  test test_i[3:0] (.blah (1'b0));", "endmodule"},
+
+      {"module test (input logic blah);", "endmodule", "module tb;",
+       "  test test_i[0:3] (.blah (1'b0));", "endmodule"}};
+
+  RunConfiguredLintTestCases<VerilogAnalyzer, UnpackedDimensionsRule>(
+      kTestCases, "range_order:little-endian");
 }
 
 }  // namespace

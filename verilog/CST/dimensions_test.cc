@@ -278,5 +278,33 @@ TEST(GetDimensionRangeRightBoundTest, CheckBounds) {
   }
 }
 
+struct ScalarTestCase {
+  const char *code;
+  const char *expect_dim;
+};
+
+// Each of these test cases should have exactly one scalar-dimension.
+static const ScalarTestCase kScalarTestCases[] = {
+    {"wire [a] w;", "a"},
+    {"wire w [b];", "b"},
+    {"wire w [c1:d1][e];", "e"},
+    {"wire w [f][c2:d2];", "f"},
+};
+
+// Test that scalar dimension is extracted correctly.
+TEST(GetDimensionScalarTest, CheckBounds) {
+  for (const auto &test : kScalarTestCases) {
+    VerilogAnalyzer analyzer(test.code, "");
+    ASSERT_OK(analyzer.Analyze()) << "Failed test code: " << test.code;
+    const auto &root = analyzer.Data().SyntaxTree();
+    const auto scale_matches =
+        SearchSyntaxTree(*ABSL_DIE_IF_NULL(root), NodekDimensionScalar());
+    ASSERT_EQ(scale_matches.size(), 1);
+    const auto *scalar_dim = GetDimensionScalar(*scale_matches.front().match);
+    const SyntaxTreeLeaf *scalar_leaf = verible::GetLeftmostLeaf(*scalar_dim);
+    EXPECT_EQ(ABSL_DIE_IF_NULL(scalar_leaf)->get().text(), test.expect_dim);
+  }
+}
+
 }  // namespace
 }  // namespace verilog
