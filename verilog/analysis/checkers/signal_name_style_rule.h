@@ -15,12 +15,17 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_SIGNAL_NAME_STYLE_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_SIGNAL_NAME_STYLE_RULE_H_
 
+#include <memory>
 #include <set>
+#include <string>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
 #include "common/analysis/syntax_tree_lint_rule.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"
+#include "re2/re2.h"
 #include "verilog/analysis/descriptions.h"
 
 namespace verilog {
@@ -33,6 +38,8 @@ class SignalNameStyleRule : public verible::SyntaxTreeLintRule {
  public:
   using rule_type = verible::SyntaxTreeLintRule;
 
+  SignalNameStyleRule();
+
   static const LintRuleDescriptor &GetDescriptor();
 
   void HandleSymbol(const verible::Symbol &symbol,
@@ -40,8 +47,16 @@ class SignalNameStyleRule : public verible::SyntaxTreeLintRule {
 
   verible::LintRuleStatus Report() const final;
 
+  absl::Status Configure(absl::string_view configuration) final;
+
  private:
   std::set<verible::LintViolation> violations_;
+
+  // A regex to check the style against
+  std::unique_ptr<re2::RE2> style_regex_;
+
+  std::string kMessage =
+      "Signal names do not match the naming convention 'lower_snake_case'.";
 };
 
 }  // namespace analysis
