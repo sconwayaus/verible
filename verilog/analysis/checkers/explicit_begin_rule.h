@@ -46,16 +46,29 @@ class ExplicitBeginRule : public verible::TokenStreamLintRule {
   verible::LintRuleStatus Report() const final;
 
  private:
+  bool HandleTokenStateMachine(const TokenInfo &token);
+
   bool IsTokenEnabled(const TokenInfo &token);
 
   // States of the internal token-based analysis.
-  enum class State { kNormal, kInAlways, kInCondition, kInElse, kExpectBegin };
+  enum class State {
+    kNormal,
+    kInAlways,
+    kInCondition,
+    kInElse,
+    kExpectBegin,
+    kConstraint,
+    kInlineConstraint
+  };
 
   // Internal lexical analysis state.
   State state_;
 
-  // Level of nested parenthesis when analysing conditional expressions.
+  // Level of nested parenthesis when analysing conditional expressions
   int condition_expr_level_;
+
+  // Level inside a constraint expression
+  int constraint_expr_level_;
 
   // Configuration
   bool if_enable_ = true;
@@ -64,11 +77,11 @@ class ExplicitBeginRule : public verible::TokenStreamLintRule {
   bool always_comb_enable_ = true;
   bool always_latch_enable_ = true;
   bool always_ff_enable_ = true;
-  bool forever_enable_ = true;
-  bool initial_enable_ = true;
   bool for_enable_ = true;
+  bool forever_enable_ = true;
   bool foreach_enable_ = true;
   bool while_enable_ = true;
+  bool initial_enable_ = true;
 
   // Token that requires blocking statement.
   verible::TokenInfo start_token_ = verible::TokenInfo::EOFToken();

@@ -51,8 +51,8 @@ const LintRuleDescriptor &ExplicitBeginRule::GetDescriptor() {
       .topic = "explicit-begin",
       .desc =
           "Checks that a Verilog ``begin`` directive follows all "
-          "if, else, always, always_comb, always_latch, always_ff,"
-          " forever, initial, for, foreach and while statements.",
+          "if, else, always, always_comb, always_latch, always_ff, "
+          "for, forever, foreach, while and initial statements.",
       .param =
           {
               {"if_enable", "true",
@@ -69,28 +69,22 @@ const LintRuleDescriptor &ExplicitBeginRule::GetDescriptor() {
                "block"},
               {"always_ff_enable", "true",
                "All always_ff statements require an explicit begin-end block"},
-              {"forever_enable", "true",
-               "All forever statements require an explicit begin-end block"},
-              {"initial_enable", "true",
-               "All initial statements require an explicit begin-end block"},
               {"for_enable", "true",
                "All for statements require an explicit begin-end block"},
+              {"forever_enable", "true",
+               "All forever statements require an explicit begin-end block"},
               {"foreach_enable", "true",
                "All foreach statements require an explicit begin-end block"},
               {"while_enable", "true",
                "All while statements require an explicit begin-end block"},
+              {"initial_enable", "true",
+               "All initial statements require an explicit begin-end block"},
           },
   };
   return d;
 }
 
 absl::Status ExplicitBeginRule::Configure(absl::string_view configuration) {
-  static const std::vector<absl::string_view> supported_statements = {
-      "if",           "else",      "always",  "always_comb",
-      "always_latch", "always_ff", "forever", "initial",
-      "for",          "foreach",   "while"};  // same sequence as enum
-                                              // StyleChoicesBits
-
   using verible::config::SetBool;
   return verible::ParseNameValues(
       configuration,
@@ -101,61 +95,64 @@ absl::Status ExplicitBeginRule::Configure(absl::string_view configuration) {
           {"always_comb_enable", SetBool(&always_comb_enable_)},
           {"always_latch_enable", SetBool(&always_latch_enable_)},
           {"always_ff_enable", SetBool(&always_ff_enable_)},
-          {"forever_enable", SetBool(&forever_enable_)},
-          {"initial_enable", SetBool(&initial_enable_)},
           {"for_enable", SetBool(&for_enable_)},
+          {"forever_enable", SetBool(&forever_enable_)},
           {"foreach_enable", SetBool(&foreach_enable_)},
           {"while_enable", SetBool(&while_enable_)},
+          {"initial_enable", SetBool(&initial_enable_)},
       });
 }
 
 bool ExplicitBeginRule::IsTokenEnabled(const TokenInfo &token) {
   switch (token.token_enum()) {
+    case TK_if:
+      return if_enable_;
+    case TK_else:
+      return else_enable_;
+    case TK_always:
+      return always_enable_;
     case TK_always_comb:
       return always_comb_enable_;
     case TK_always_latch:
       return always_latch_enable_;
-    case TK_forever:
-      return forever_enable_;
-    case TK_initial:
-      return initial_enable_;
     case TK_always_ff:
       return always_ff_enable_;
-    case TK_foreach:
-      return foreach_enable_;
     case TK_for:
       return for_enable_;
-    case TK_if:
-      return if_enable_;
+    case TK_forever:
+      return forever_enable_;
+    case TK_foreach:
+      return foreach_enable_;
     case TK_while:
       return while_enable_;
-    case TK_always:
-      return always_enable_;
-    case TK_else:
-      return else_enable_;
+    case TK_initial:
+      return initial_enable_;
     default:
       return false;
   }
 }
 
-void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
-  // Ignore all white space and comments and return immediately
-  switch (token.token_enum()) {
-    case TK_SPACE:
-    case TK_NEWLINE:
-    case TK_COMMENT_BLOCK:
-    case TK_EOL_COMMENT:
-      return;
-    default:
-      break;
-  }
-
+bool ExplicitBeginRule::HandleTokenStateMachine(const TokenInfo &token) {
   // Responds to a token by updating the state of the analysis.
   bool raise_violation = false;
   switch (state_) {
     case State::kNormal: {
+      // Special handling for constraints
+      switch (token.token_enum()) {
+        case TK_constraint: {
+          constraint_expr_level_ = 0;
+          state_ = State::kConstraint;
+          return false;
+        }
+        case TK_with: {
+          constraint_expr_level_ = 0;
+          state_ = State::kInlineConstraint;
+          return false;
+        }
+      }
+
       if (!IsTokenEnabled(token)) {
-        return;
+        break;
       }
 
       switch (token.token_enum()) {
@@ -170,10 +167,10 @@ void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
         // After token expect a "condition" followed by "begin". NOTE: there may
         // be tokens prior to the condition (like in an "always_ff" statement)
         // and these are all ignored.
-        case TK_always_ff:
-        case TK_foreach:
-        case TK_for:
         case TK_if:
+        case TK_always_ff:
+        case TK_for:
+        case TK_foreach:
         case TK_while:
           condition_expr_level_ = 0;
           start_token_ = token;
@@ -198,7 +195,7 @@ void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
       break;
     }
     case State::kInAlways: {
-      // always is a little more complicated in that it can be imediattly
+      // always is a little more complicated in that it can be immediately
       // followed by a "begin" or followed by some special characters ("@" or
       // "*") and maybe a condition.
       switch (token.token_enum()) {
@@ -209,7 +206,7 @@ void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
           state_ = State::kNormal;
           break;
         case '(':
-          condition_expr_level_ = 1;
+          condition_expr_level_++;
           state_ = State::kInCondition;
           break;
         default:
@@ -275,6 +272,41 @@ void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
       }
       break;
     }
+    case State::kInlineConstraint: {
+      switch (token.token_enum()) {
+        case '{': {
+          // An InlineConstraint
+          constraint_expr_level_++;
+          state_ = State::kConstraint;
+          break;
+        }
+        default: {
+          // throw away everything else
+          state_ = State::kNormal;
+          break;
+        }
+      }
+    }
+    case State::kConstraint: {
+      // System Verilog constraints are special and use curly braces {}
+      // instead of begin-end. So ignore all constraints
+      switch (token.token_enum()) {
+        case '{': {
+          constraint_expr_level_++;
+          break;
+        }
+        case '}': {
+          constraint_expr_level_--;
+          if (constraint_expr_level_ == 0) {
+            state_ = State::kNormal;
+          }
+        }
+        default: {
+          // throw away everything else
+          break;
+        }
+      }
+    }
   }  // switch (state_)
 
   if (raise_violation) {
@@ -283,9 +315,33 @@ void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
                                    " Expected begin, got ", token.text())));
 
     // Once the violation is raised, we go back to a normal, default, state
-    condition_expr_level_ = 0;
     state_ = State::kNormal;
-    raise_violation = false;
+  }
+
+  return raise_violation;
+}
+
+void ExplicitBeginRule::HandleToken(const TokenInfo &token) {
+  // Ignore all white space and comments and return immediately
+  switch (token.token_enum()) {
+    case TK_SPACE:
+    case TK_NEWLINE:
+    case TK_COMMENT_BLOCK:
+    case TK_EOL_COMMENT:
+      return;
+    default:
+      break;
+  }
+
+  bool retry = HandleTokenStateMachine(token);
+
+  // If this token raises a violation, it was because the statemachine was
+  // expecting a begin token. This token may expect a begin token too, so
+  // check it.
+  // Consider: forever if(a) #10; else #20; // 3 violations could be raised
+  // [forever, if, else].
+  if (retry) {
+    HandleTokenStateMachine(token);
   }
 }
 
