@@ -194,6 +194,11 @@ TEST(EnumNameStyleRuleTest, UpperSnakeCaseTests) {
        "typedef enum logic [1:0] { Fir, Oak, Pine } TREE_T;\n"
        "tree_t a_tree;\n"
        "endmodule"},
+      {"typedef enum ", {kToken, "HelloWorld"}, ";"},
+      {"typedef enum ", {kToken, "_baz"}, ";"},
+      {"typedef enum ", {kToken, "Bad_name"}, ";"},
+      {"typedef enum ", {kToken, "bad_Name"}, ";"},
+      {"typedef enum ", {kToken, "Bad2"}, ";"},
 
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, EnumNameStyleRule>(
