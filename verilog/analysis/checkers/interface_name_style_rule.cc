@@ -73,7 +73,7 @@ const LintRuleDescriptor &InterfaceNameStyleRule::GetDescriptor() {
           "RE2 regular expression syntax documentation can be found at "
           "https://github.com/google/re2/wiki/syntax\n",
       .param = {{"style_regex", style_default_regex,
-                 "A regex used to check enum type name style."}},
+                 "A regex used to check interface name style."}},
   };
   return d;
 }
@@ -101,7 +101,6 @@ void InterfaceNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
 absl::Status InterfaceNameStyleRule::Configure(
     absl::string_view configuration) {
   using verible::config::SetRegex;
-  using verible::config::SetString;
   absl::Status s = verible::ParseNameValues(
       configuration, {{"style_regex", SetRegex(&style_regex_)}});
   if (!s.ok()) return s;
