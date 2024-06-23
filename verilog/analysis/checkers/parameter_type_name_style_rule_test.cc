@@ -27,6 +27,7 @@ namespace analysis {
 namespace {
 
 using verible::LintTestCase;
+using verible::RunConfiguredLintTestCases;
 using verible::RunLintTestCases;
 
 // Tests that ParameterTypeNameStyleRule correctly accepts valid names.
@@ -94,7 +95,22 @@ TEST(ParameterTypeNameStyleRuleTest, RejectTests) {
       {"parameter type ", {kToken, "foo_bar"}, ";"},
   };
   RunLintTestCases<VerilogAnalyzer, ParameterTypeNameStyleRule>(kTestCases);
-}  // namespace
+}
+
+TEST(ParameterTypeNameStyleRuleTest, UpperSnakeCaseTests) {
+  constexpr int kToken = SymbolIdentifier;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      {""},
+      {"module foo #(parameter type FOO_BAR_T); endmodule"},
+      {"module foo #(parameter type FOO_BAR_T = logic); endmodule"},
+      {"module foo; localparam type FOO_BAR_T; endmodule"},
+      {"module foo; localparam type FOO_BAR_T = logic; endmodule"},
+      {"parameter type FOO_BAR_T;"},
+      {"parameter type FOO_BAR_T = logic;"},
+  };
+  RunConfiguredLintTestCases<VerilogAnalyzer, ParameterTypeNameStyleRule>(
+      kTestCases, "style_regex:[A-Z_0-9]+(_T)");
+}
 
 }  // namespace
 }  // namespace analysis
