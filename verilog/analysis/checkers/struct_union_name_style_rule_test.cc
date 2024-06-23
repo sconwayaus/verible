@@ -37,42 +37,21 @@ TEST(StructUnionNameStyleRuleTest, ConfigurationPass) {
   StructUnionNameStyleRule rule;
   absl::Status status;
   EXPECT_TRUE((status = rule.Configure("")).ok()) << status.message();
-  EXPECT_TRUE((status = rule.Configure("exceptions:12B,121GW")).ok())
-      << status.message();
-  EXPECT_TRUE((status = rule.Configure("exceptions:B,GiW")).ok())
+  EXPECT_TRUE((status = rule.Configure("style_regex:[a-b]")).ok())
       << status.message();
 }
 
 TEST(StructUnionNameStyleRuleTest, ConfigurationFail) {
   StructUnionNameStyleRule rule;
   absl::Status status;
-  EXPECT_FALSE((status = rule.Configure("bad_exceptions:,")).ok())
+  EXPECT_FALSE((status = rule.Configure("bad_style_regex:,")).ok())
       << status.message();
 
-  EXPECT_FALSE((status = rule.Configure("exceptions:,")).ok())
+  EXPECT_FALSE((status = rule.Configure("style_regex:[a-z")).ok())
       << status.message();
-  EXPECT_TRUE(
-      absl::StrContains(status.message(), "at least one alphabetic character"));
-  EXPECT_FALSE((status = rule.Configure("exceptions: 12B")).ok())
-      << status.message();
-  EXPECT_TRUE(absl::StrContains(status.message(),
-                                "digits and alphabetic characters only"));
-  EXPECT_FALSE((status = rule.Configure("exceptions:12")).ok())
-      << status.message();
-  EXPECT_TRUE(
-      absl::StrContains(status.message(), "at least one alphabetic character"));
-  EXPECT_FALSE((status = rule.Configure("exceptions:GB12")).ok())
-      << status.message();
-  EXPECT_TRUE(
-      absl::StrContains(status.message(), "after the unit are not allowed"));
-  EXPECT_FALSE((status = rule.Configure("exceptions:12_B")).ok())
-      << status.message();
-  EXPECT_TRUE(absl::StrContains(status.message(),
-                                "digits and alphabetic characters only"));
-  EXPECT_FALSE((status = rule.Configure("exceptions:Gw,12")).ok())
-      << status.message();
-  EXPECT_TRUE(
-      absl::StrContains(status.message(), "at least one alphabetic character"));
+  EXPECT_TRUE(absl::StrContains(
+      status.message(),
+      "style_regex: Failed to parse regular expression: missing ]: [a-z"));
 }
 
 TEST(StructUnionNameStyleRuleTest, ValidStructNames) {
@@ -89,7 +68,9 @@ TEST(StructUnionNameStyleRuleTest, ValidStructNames) {
 }
 
 TEST(StructUnionNameStyleRuleTestConfigured, ValidStructNames) {
-  const absl::string_view exceptions = "exceptions:12B,11GiB,KJ,Kg";
+  // const absl::string_view exceptions = "exceptions:12B,11GiB,KJ,Kg";
+  const absl::string_view configuration =
+      "style_regex:[^_]([a-z0-9]*_|[0-9]+(B|GiB|KJ|Kg)_)+t";
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
       {"typedef struct {logic foo; logic bar;} b_a_z_t;"},
@@ -101,11 +82,13 @@ TEST(StructUnionNameStyleRuleTestConfigured, ValidStructNames) {
       {"typedef struct {logic foo; logic bar;} good_10Kg_name_t;"},
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, StructUnionNameStyleRule>(
-      kTestCases, exceptions);
+      kTestCases, configuration);
 }
 
 TEST(StructUnionNameStyleRuleTestConfigured, InvalidStructNames) {
-  const absl::string_view exceptions = "exceptions:12B,KJ,Kg,t";
+  // const absl::string_view exceptions = "exceptions:12B,KJ,Kg,t";
+  const absl::string_view configuration =
+      "style_regex:[^_]([a-z0-9]*_|[0-9]+(B|GiB|KJ|Kg)_)+t";
   constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
@@ -119,7 +102,7 @@ TEST(StructUnionNameStyleRuleTestConfigured, InvalidStructNames) {
        ";"},
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, StructUnionNameStyleRule>(
-      kTestCases, exceptions);
+      kTestCases, configuration);
 }
 
 TEST(StructUnionNameStyleRuleTest, InvalidStructNames) {
@@ -169,7 +152,9 @@ TEST(StructUnionNameStyleRuleTest, ValidUnionNames) {
 }
 
 TEST(StructUnionNameStyleRuleTestConfigured, ValidUnionNames) {
-  const absl::string_view exceptions = "exceptions:12B,11GiB,KJ,Kg";
+  // exceptions:B,GiB,KJ,Kg
+  const absl::string_view configuration =
+      "style_regex:[^_]([a-z0-9]*_|[0-9]+(B|GiB|KJ|Kg)_)+t";
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
       {"typedef union {logic foo; logic bar;} b_a_z_t;"},
@@ -181,7 +166,7 @@ TEST(StructUnionNameStyleRuleTestConfigured, ValidUnionNames) {
       {"typedef union {logic foo; logic bar;} good_10Kg_name_t;"},
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, StructUnionNameStyleRule>(
-      kTestCases, exceptions);
+      kTestCases, configuration);
 }
 
 TEST(StructUnionNameStyleRuleTest, InvalidUnionNames) {
@@ -220,7 +205,9 @@ TEST(StructUnionNameStyleRuleTest, InvalidUnionNames) {
 }
 
 TEST(StructUnionNameStyleRuleTestConfigured, InvalidUnionNames) {
-  const absl::string_view exceptions = "exceptions:12B,KJ,Kg,t";
+  // exceptions:B,GiB,KJ,Kg
+  const absl::string_view configuration =
+      "style_regex:[^_]([a-z0-9]*_|[0-9]+(B|GiB|KJ|Kg)_)+t";
   constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
@@ -234,7 +221,7 @@ TEST(StructUnionNameStyleRuleTestConfigured, InvalidUnionNames) {
        ";"},
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, StructUnionNameStyleRule>(
-      kTestCases, exceptions);
+      kTestCases, configuration);
 }
 
 }  // namespace

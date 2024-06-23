@@ -15,6 +15,7 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_STRUCT_UNION_NAME_STYLE_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_STRUCT_UNION_NAME_STYLE_RULE_H_
 
+#include <memory>
 #include <set>
 #include <string>
 
@@ -24,6 +25,7 @@
 #include "common/analysis/syntax_tree_lint_rule.h"
 #include "common/text/symbol.h"
 #include "common/text/syntax_tree_context.h"
+#include "re2/re2.h"
 #include "verilog/analysis/descriptions.h"
 
 namespace verilog {
@@ -31,23 +33,32 @@ namespace analysis {
 
 // StructUnionNameStyleRule checks that all struct and union names use
 // lower_snake_case naming convention.
+// SignalNameStyleRule checks that signal names follow
+// a naming convention matching a regex pattern.
+// Signals are defined as "a net, variable, or port within a
+// SystemVerilog design".
 class StructUnionNameStyleRule : public verible::SyntaxTreeLintRule {
  public:
   using rule_type = verible::SyntaxTreeLintRule;
 
-  static const LintRuleDescriptor& GetDescriptor();
+  StructUnionNameStyleRule();
 
-  void HandleSymbol(const verible::Symbol& symbol,
-                    const verible::SyntaxTreeContext& context) final;
+  static const LintRuleDescriptor &GetDescriptor();
 
-  absl::Status Configure(absl::string_view configuration) final;
+  void HandleSymbol(const verible::Symbol &symbol,
+                    const verible::SyntaxTreeContext &context) final;
 
   verible::LintRuleStatus Report() const final;
 
- private:
-  std::set<std::string> exceptions_;
+  absl::Status Configure(absl::string_view configuration) final;
 
+ private:
   std::set<verible::LintViolation> violations_;
+
+  // A regex to check the style against
+  std::unique_ptr<re2::RE2> style_regex_;
+
+  std::string kMessage;
 };
 
 }  // namespace analysis
