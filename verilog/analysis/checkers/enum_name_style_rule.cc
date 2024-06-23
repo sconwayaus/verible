@@ -102,20 +102,6 @@ void EnumNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
   }
 }
 
-absl::Status EnumNameStyleRule::Configure(absl::string_view configuration) {
-  using verible::config::SetRegex;
-  using verible::config::SetString;
-  absl::Status s = verible::ParseNameValues(
-      configuration, {{"style_regex", SetRegex(&style_regex_)}});
-  if (!s.ok()) return s;
-
-  kMessage =
-      absl::StrCat("Enum type name does not match the naming convention ",
-                   "defined by regex pattern: ", style_regex_->pattern());
-
-  return absl::OkStatus();
-}
-
 LintRuleStatus EnumNameStyleRule::Report() const {
   return LintRuleStatus(violations_, GetDescriptor());
 }
