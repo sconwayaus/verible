@@ -44,7 +44,8 @@ using verible::LintViolation;
 using verible::SyntaxTreeContext;
 using verible::matcher::Matcher;
 
-static std::string style_default_regex = "[a-z_0-9]+(_t|_e)";
+#define STYLE_DEFAULT_REGEX "[a-z_0-9]+(_t|_e)"
+static constexpr absl::string_view style_default_regex = STYLE_DEFAULT_REGEX;
 
 EnumNameStyleRule::EnumNameStyleRule() {
   style_regex_ =
@@ -71,7 +72,7 @@ const LintRuleDescriptor &EnumNameStyleRule::GetDescriptor() {
           "  PascalCaseRegexPattern: \"([A-Z0-9]+[a-z0-9]*)+\"\n"
           "RE2 regular expression syntax documentation can be found at "
           "https://github.com/google/re2/wiki/syntax\n",
-      .param = {{"style_regex", style_default_regex,
+      .param = {{"style_regex", STYLE_DEFAULT_REGEX,
                  "A regex used to check enum type name style."}},
   };
   return d;
