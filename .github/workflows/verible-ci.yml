@@ -570,8 +570,8 @@ jobs:
         # Create a tag of form v0.0-183-gdf2b162-20191112132344
         TAG="v0.2_my_master"
 
-        # git tag "$TAG" || true
-        # echo "TAG=$TAG" >> $GITHUB_ENV
+        git tag "$TAG" || true
+        echo "TAG=$TAG" >> $GITHUB_ENV
 
         ls -lah artifact
 
@@ -580,7 +580,6 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: artifact/verible*.{tar.gz,zip}
-        tag: ${{ env.TAG }}
         overwrite: true
         file_glob: true
 
