@@ -30,7 +30,7 @@ using verible::LintTestCase;
 using verible::RunConfiguredLintTestCases;
 using verible::RunLintTestCases;
 
-TEST(SignalNameStyleRuleTest, ModulePortTests) {
+TEST(SignalNameStyleRuleTest, DefaultTests) {
   constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},

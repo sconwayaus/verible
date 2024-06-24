@@ -31,8 +31,9 @@
 namespace verilog {
 namespace analysis {
 
-// SignalNameStyleRule checks that signal names use lower_snake_case naming
-// convention. Signals are defined as "a net, variable, or port within a
+// SignalNameStyleRule checks that signal names follow
+// a naming convention matching a regex pattern.
+// Signals are defined as "a net, variable, or port within a
 // SystemVerilog design".
 class SignalNameStyleRule : public verible::SyntaxTreeLintRule {
  public:
@@ -55,8 +56,7 @@ class SignalNameStyleRule : public verible::SyntaxTreeLintRule {
   // A regex to check the style against
   std::unique_ptr<re2::RE2> style_regex_;
 
-  std::string kMessage =
-      "Signal names do not match the naming convention 'lower_snake_case'.";
+  std::string kMessage;
 };
 
 }  // namespace analysis

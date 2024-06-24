@@ -48,11 +48,16 @@ using verible::LintViolation;
 using verible::SyntaxTreeContext;
 using verible::matcher::Matcher;
 
-static std::string style_default_regex = "[a-z_0-9]+";
+#define STYLE_DEFAULT_REGEX "[a-z_0-9]+"
+static std::string style_default_regex = STYLE_DEFAULT_REGEX;
 
 SignalNameStyleRule::SignalNameStyleRule() {
   style_regex_ =
       std::make_unique<re2::RE2>(style_default_regex, re2::RE2::Quiet);
+
+  kMessage =
+      absl::StrCat("Signal name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
 }
 
 const LintRuleDescriptor &SignalNameStyleRule::GetDescriptor() {
@@ -72,7 +77,7 @@ const LintRuleDescriptor &SignalNameStyleRule::GetDescriptor() {
           "  PascalCaseRegexPattern: \"([A-Z0-9]+[a-z0-9]*)+\"\n"
           "RE2 regular expression syntax documentation can be found at "
           "https://github.com/google/re2/wiki/syntax\n",
-      .param = {{"style_regex", style_default_regex,
+      .param = {{"style_regex", STYLE_DEFAULT_REGEX,
                  "A regex used to check signal names style."}},
   };
   return d;
@@ -124,17 +129,14 @@ void SignalNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
 
 absl::Status SignalNameStyleRule::Configure(absl::string_view configuration) {
   using verible::config::SetRegex;
-  using verible::config::SetString;
   absl::Status s = verible::ParseNameValues(
       configuration, {{"style_regex", SetRegex(&style_regex_)}});
   if (!s.ok()) return s;
 
-  std::string user_string;
-  s = verible::ParseNameValues(configuration,
-                               {{"style_regex", SetString(&user_string)}});
-  kMessage = absl::StrCat("Signal name does not match the naming convention '",
-                          user_string,
-                          "' (regex pattern: ", style_regex_->pattern(), ").");
+  kMessage =
+      absl::StrCat("Signal name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
+
   return absl::OkStatus();
 }
 
