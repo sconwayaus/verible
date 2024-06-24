@@ -86,7 +86,7 @@ _linter_test_configs = [
     ("packed-dimensions-range-ordering", "packed_dimensions", True),
     ("parameter-name-style", "localparam_name_style", True),
     ("parameter-name-style=localparam_style_regex:[A-Z_0-9]+", "localparam_name_style_all_caps", False),
-    ("parameter-name-style=localparam_style_regex:([A-Z0-9]+[a-z0-9]*)+(_[0-9]+)?", "localparam_name_style_camel_case", True),
+    ("parameter-name-style=localparam_style_regex:\\([A-Z0-9]+[a-z0-9]*\\)+\\(_[0-9]+\\)?", "localparam_name_style_camel_case", True),
     ("parameter-name-style", "parameter_name_style", True),
     ("parameter-type-name-style", "parameter_type_name_style", False),
     ("parameter-type-name-style", "localparam_type_name_style", False),
