@@ -663,6 +663,7 @@ cc_library(
         "//common/text:symbol",
         "//common/text:tree-utils",
         "//common/util:logging",
+        "//verilog/CST:declaration",
     ],
 )
 
