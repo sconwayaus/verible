@@ -22,6 +22,7 @@
 #include "common/text/symbol.h"
 #include "common/text/tree_utils.h"
 #include "common/util/logging.h"
+#include "verilog/CST/declaration.h"
 #include "verilog/CST/identifier.h"
 #include "verilog/CST/verilog_matchers.h"  // pragma IWYU: keep
 #include "verilog/CST/verilog_nonterminals.h"
@@ -62,6 +63,55 @@ const SyntaxTreeLeaf *GetDirectionFromPortDeclaration(const Symbol &symbol) {
   if (const auto *dir_symbol =
           GetSubtreeAsSymbol(symbol, NodeEnum::kPortDeclaration, 0)) {
     return &SymbolCastToLeaf(*dir_symbol);
+  }
+  return nullptr;
+}
+
+const verible::SyntaxTreeNode *GetDataTypeNodeFromPortDeclaration(
+    const Symbol &symbol) {
+  if (const auto *dir_symbol =
+          GetSubtreeAsNode(symbol, NodeEnum::kPortDeclaration, 2)) {
+    return &SymbolCastToNode(*dir_symbol);
+  }
+  return nullptr;
+}
+
+const verible::SyntaxTreeNode *GetDataTypePrimitiveNodeFromDataType(
+    const Symbol &symbol) {
+  if (const auto *data_type_primitive_node =
+          GetSubtreeAsNode(symbol, NodeEnum::kDataType, 1)) {
+    return &SymbolCastToNode(*data_type_primitive_node);
+  }
+  return nullptr;
+}
+
+const SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(
+  const Symbol &symbol) {
+  if (const auto *data_type_primitive_node =
+          GetSubtreeAsLeaf(symbol, NodeEnum::kPortDeclaration, 1)) {
+    return &SymbolCastToLeaf(*data_type_primitive_node);
+  }
+
+  return nullptr;
+}
+
+const SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
+    const Symbol &symbol) {
+
+  if (const verible::SyntaxTreeNode *data_type_node =
+          GetDataTypeNodeFromPortDeclaration(symbol)) {
+    if (const verible::SyntaxTreeNode *data_type_primitive_node =
+            GetDataTypePrimitiveNodeFromDataType(*data_type_node)) {
+
+      if(data_type_primitive_node->MatchesTag(NodeEnum::kLocalRoot)) {
+        return nullptr;
+      }
+      
+      if (const auto *dir_symbol = GetSubtreeAsSymbol(
+              *data_type_primitive_node, NodeEnum::kDataTypePrimitive, 0)) {
+        return &SymbolCastToLeaf(*dir_symbol);
+      }
+    }
   }
   return nullptr;
 }

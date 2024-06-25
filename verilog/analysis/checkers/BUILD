@@ -32,6 +32,7 @@ cc_library(
         ":forbid-consecutive-null-statements-rule",
         ":forbid-defparam-rule",
         ":forbid-negative-array-dim",
+        ":forbid-port-type-rule",
         ":forbidden-anonymous-enums-rule",
         ":forbidden-anonymous-structs-unions-rule",
         ":forbidden-macro-rule",
@@ -1475,6 +1476,44 @@ cc_test(
     srcs = ["forbid_negative_array_dim_test.cc"],
     deps = [
         ":forbid-negative-array-dim",
+        "//common/analysis:linter-test-utils",
+        "//common/analysis:syntax-tree-linter-test-utils",
+        "//verilog/analysis:verilog-analyzer",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "forbid-port-type-rule",
+    srcs = ["forbid_port_type_rule.cc"],
+    hdrs = ["forbid_port_type_rule.h"],
+    deps = [
+        "//common/analysis:lint-rule-status",
+        "//common/analysis:syntax-tree-lint-rule",
+        "//common/analysis/matcher",
+        "//common/analysis/matcher:bound-symbol-manager",
+        "//common/text:config-utils",
+        "//common/text:symbol",
+        "//common/text:syntax-tree-context",
+        "//common/text:token-info",
+        "//common/util:logging",
+        "//verilog/CST:port",
+        "//verilog/CST:verilog-matchers",
+        "//verilog/analysis:descriptions",
+        "//verilog/analysis:lint-rule-registry",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "forbid-port-type-rule_test",
+    srcs = ["forbid_port_type_rule_test.cc"],
+    deps = [
+        ":forbid-port-type-rule",
         "//common/analysis:linter-test-utils",
         "//common/analysis:syntax-tree-linter-test-utils",
         "//verilog/analysis:verilog-analyzer",

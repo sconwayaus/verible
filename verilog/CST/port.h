@@ -50,6 +50,25 @@ const verible::SyntaxTreeLeaf *GetIdentifierFromPortDeclaration(
 const verible::SyntaxTreeLeaf *GetDirectionFromPortDeclaration(
     const verible::Symbol &);
 
+// FIXME: Add comments here
+const verible::SyntaxTreeNode *GetDataTypeNodeFromPortDeclaration(
+    const verible::Symbol &symbol);
+
+// Extracts the signal type from a port declaration.
+// Can retutn nullptr is the signal type is not specified
+// Example signal_type: wire, var
+const verible::SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(
+  const verible::Symbol &symbol);
+
+// Extracts the data type from a port declaration.
+// Can retutn nullptr is the signal type is not specified
+// Example data_type: logic, reg
+const verible::SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
+    const verible::Symbol &symbol);
+
+const verible::SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
+    const verible::Symbol &symbol);
+
 // Extract the interface name from a port declaration
 // Can return nullptr if the port is not an interface port
 const verible::Symbol *GetInterfaceHeaderNodeFromPortDeclaration(const verible::Symbol &symbol);
