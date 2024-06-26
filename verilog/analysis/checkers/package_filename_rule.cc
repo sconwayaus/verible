@@ -37,17 +37,29 @@
 namespace verilog {
 namespace analysis {
 
+VERILOG_REGISTER_LINT_RULE(PackageFilenameRule);
+
 using verible::LintRuleStatus;
 using verible::TextStructureView;
 
-// Register the lint rule
-VERILOG_REGISTER_LINT_RULE(PackageFilenameRule);
+#define STYLE_DEFAULT_REGEX "[a-z_0-9]+"
+static constexpr absl::string_view style_default_regex = STYLE_DEFAULT_REGEX;
 
-static constexpr absl::string_view optional_suffix = "_pkg";
+PackageFilenameRule::PackageFilenameRule() {
+  style_regex_ =
+      std::make_unique<re2::RE2>(style_default_regex, re2::RE2::Quiet);
 
-static constexpr absl::string_view kMessage =
-    "Package declaration name must match the file name "
-    "(ignoring optional \"_pkg\" file name suffix).  ";
+  optional_filename_suffix = "_pkg";
+
+  kMessageFilename = absl::StrCat(
+      "Package declaration name must match the file name "
+      "(ignoring optional \"",
+      optional_filename_suffix, "\" file name suffix).  ");
+
+  kMessagePackageName =
+      absl::StrCat("Package name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
+}
 
 const LintRuleDescriptor &PackageFilenameRule::GetDescriptor() {
   static const LintRuleDescriptor d{
@@ -56,10 +68,27 @@ const LintRuleDescriptor &PackageFilenameRule::GetDescriptor() {
       .desc =
           "Checks that the package name matches the filename. Depending on "
           "configuration, it is also allowed to replace underscore with dashes "
-          "in filenames.",
-      .param = {{"allow-dash-for-underscore", "false",
-                 "Allow dashes in the filename corresponding to the "
-                 "underscores in the package"}},
+          "in filenames. The package name style is defined by a RE2 regular "
+          "expression.\n"
+          "Example common regex patterns:\n"
+          "  lower_snake_case: \"[a-z_0-9]+\"\n"
+          "  UPPER_SNAKE_CASE: \"[A-Z_0-9]+\"\n"
+          "  Title_Snake_Case: \"[A-Z]+[a-z0-9]*(_[A-Z0-9]+[a-z0-9]*)*\"\n"
+          "  Sentence_snake_case: \"([A-Z0-9]+[a-z0-9]*_?)([a-z0-9]*_*)*\"\n"
+          "  camelCase: \"([a-z0-9]+[A-Z0-9]*)+\"\n"
+          "  PascalCaseRegexPattern: \"([A-Z0-9]+[a-z0-9]*)+\"\n"
+          "RE2 regular expression syntax documentation can be found at "
+          "https://github.com/google/re2/wiki/syntax\n",
+      .param =
+          {
+              {"package_name_style_regex", STYLE_DEFAULT_REGEX,
+               "A regex used to check interface name style."},
+              {"optional_filename_suffix", "_pkg",
+               "An optional filename suffix"},
+              {"allow-dash-for-underscore", "false",
+               "Allow dashes in the filename corresponding to the "
+               "underscores in the package"},
+          },
   };
   return d;
 }
@@ -106,25 +135,49 @@ void PackageFilenameRule::Lint(const TextStructureView &text_structure,
         GetPackageNameToken(*package_match.match);
     if (!package_name_token) continue;
     absl::string_view package_id = package_name_token->text();
-    auto package_id_plus_suffix = absl::StrCat(package_id, optional_suffix);
+    auto package_id_plus_suffix =
+        absl::StrCat(package_id, optional_filename_suffix);
     if ((package_id != unitname) && (package_id_plus_suffix != unitname)) {
       violations_.insert(verible::LintViolation(
           *package_name_token,
-          absl::StrCat(kMessage, "declaration: \"", package_id,
+          absl::StrCat(kMessageFilename, "declaration: \"", package_id,
                        "\" vs. basename(file): \"", unitname, "\"")));
     }
+
+    // Check that the package name follows the naming style
+    if (!RE2::FullMatch(unitname, *style_regex_)) {
+      violations_.insert(
+          verible::LintViolation(*package_name_token, kMessagePackageName));
+    }
   }
+}
+
+absl::Status PackageFilenameRule::Configure(absl::string_view configuration) {
+  using verible::config::SetBool;
+  using verible::config::SetRegex;
+  using verible::config::SetString;
+  absl::Status s = verible::ParseNameValues(
+      configuration,
+      {{"package_name_style_regex", SetRegex(&style_regex_)},
+       {"optional_filename_suffix", SetString(&optional_filename_suffix)},
+       {"allow-dash-for-underscore", SetBool(&allow_dash_for_underscore_)}});
+  if (!s.ok()) return s;
+
+  kMessageFilename = absl::StrCat(
+      "Package declaration name must match the file name "
+      "(ignoring optional \"",
+      optional_filename_suffix, "\" file name suffix).  ");
+
+  kMessagePackageName =
+      absl::StrCat("Package name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
+
+  return absl::OkStatus();
 }
 
 LintRuleStatus PackageFilenameRule::Report() const {
   return LintRuleStatus(violations_, GetDescriptor());
 }
 
-absl::Status PackageFilenameRule::Configure(absl::string_view configuration) {
-  using verible::config::SetBool;
-  return verible::ParseNameValues(
-      configuration,
-      {{"allow-dash-for-underscore", SetBool(&allow_dash_for_underscore_)}});
-}
 }  // namespace analysis
 }  // namespace verilog
