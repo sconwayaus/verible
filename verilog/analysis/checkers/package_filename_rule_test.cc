@@ -227,6 +227,46 @@ TEST(PackageFilenameRuleTest, DashAllowedWhenConfigured) {
   }
 }
 
+TEST(PackageFilenameRuleTest, PackageNameStyle) {
+  const std::initializer_list<LintTestCase> kOkCases = {
+      {"package Foo_bar; endpackage"},
+  };
+  const std::initializer_list<LintTestCase> kComplaintCases = {
+      {"package ", {kToken, "Foo_bar"}, "; endpackage"},
+  };
+
+  const std::string f_with_underscore = "/path/to/Foo_bar.sv";
+  const std::string f_with_dash = "/path/to/Foo-bar.sv";
+  const std::string f_with_dash_pkg = "/path/to/Foo-bar-package.sv";
+
+  {
+    // With dashes not allowed, we only accept the underscore name
+    constexpr absl::string_view config =
+        "allow-dash-for-underscore:off;package_name_style_regex:[A-Z][a-z_]*;"
+        "optional_filename_suffix:_package";
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kOkCases, config, f_with_underscore);
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kComplaintCases, config, f_with_dash);
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kComplaintCases, config, f_with_dash_pkg);
+  }
+
+  {
+    // ... But with dashes allowed, dashes are also an ok case.
+    constexpr absl::string_view config =
+        "allow-dash-for-underscore:on;package_name_style_regex:[A-Z][a-z_]*;"
+        "optional_filename_suffix:_package";
+    // With dashes not allowed, we only accept the underscore name
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kOkCases, config, f_with_underscore);
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kOkCases, config, f_with_dash);
+    RunConfiguredLintTestCases<VerilogAnalyzer, PackageFilenameRule>(
+        kOkCases, config, f_with_dash_pkg);
+  }
+}
+
 }  // namespace
 }  // namespace analysis
 }  // namespace verilog
