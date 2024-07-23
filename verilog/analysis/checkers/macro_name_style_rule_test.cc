@@ -75,7 +75,6 @@ TEST(MacroNameStyleRuleTest, BasicTests) {
 }
 
 TEST(MacroNameStyleRuleTest, LowerSnakeCaseTests) {
-  constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
       {"`define foo 1"},

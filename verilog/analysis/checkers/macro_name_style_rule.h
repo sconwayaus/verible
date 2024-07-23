@@ -41,6 +41,8 @@ class MacroNameStyleRule : public verible::TokenStreamLintRule {
 
   static const LintRuleDescriptor &GetDescriptor();
 
+  std::string CreateViolationMessage();
+
   void HandleToken(const verible::TokenInfo &token) final;
 
   verible::LintRuleStatus Report() const final;
@@ -63,8 +65,6 @@ class MacroNameStyleRule : public verible::TokenStreamLintRule {
   std::unique_ptr<re2::RE2> style_regex_;
   std::unique_ptr<re2::RE2> style_lower_snake_case_regex_;
   std::unique_ptr<re2::RE2> style_upper_snake_case_regex_;
-
-  std::string kMessage;
 };
 
 }  // namespace analysis

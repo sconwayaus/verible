@@ -23,7 +23,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "common/analysis/lint_rule_status.h"
-#include "common/analysis/token_stream_lint_rule.h"
 #include "common/text/config_utils.h"
 #include "common/text/token_info.h"
 #include "re2/re2.h"
@@ -41,7 +40,6 @@ VERILOG_REGISTER_LINT_RULE(MacroNameStyleRule);
 using verible::LintRuleStatus;
 using verible::LintViolation;
 using verible::TokenInfo;
-using verible::TokenStreamLintRule;
 
 static constexpr absl::string_view kUVMLowerCaseMessage =
     "'uvm_*' named macros must follow 'lower_snake_case' format.";
@@ -49,49 +47,38 @@ static constexpr absl::string_view kUVMLowerCaseMessage =
 static constexpr absl::string_view kUVMUpperCaseMessage =
     "'UVM_*' named macros must follow 'UPPER_SNAKE_CASE' format.";
 
-#define LOWER_SNAKE_CASE_REGEX "[a-z_0-9]+"
-static absl::string_view lower_snake_case_regex = LOWER_SNAKE_CASE_REGEX;
+static absl::string_view lower_snake_case_regex = "[a-z_0-9]+";
+static absl::string_view upper_snake_case_regex = "[A-Z_0-9]+";
 
-#define UPPER_SNAKE_CASE_REGEX "[A-Z_0-9]+"
-static absl::string_view upper_snake_case_regex = UPPER_SNAKE_CASE_REGEX;
-
-MacroNameStyleRule::MacroNameStyleRule() {
-  style_regex_ =
-      std::make_unique<re2::RE2>(upper_snake_case_regex, re2::RE2::Quiet);
-
-  style_lower_snake_case_regex_ =
-      std::make_unique<re2::RE2>(lower_snake_case_regex, re2::RE2::Quiet);
-
-  style_upper_snake_case_regex_ =
-      std::make_unique<re2::RE2>(upper_snake_case_regex, re2::RE2::Quiet);
-
-  kMessage =
-      absl::StrCat("Macro name does not match the naming convention ",
-                   "defined by regex pattern: ", style_regex_->pattern());
-}
+MacroNameStyleRule::MacroNameStyleRule()
+    : style_regex_(
+          std::make_unique<re2::RE2>(upper_snake_case_regex, re2::RE2::Quiet)),
+      style_lower_snake_case_regex_(
+          std::make_unique<re2::RE2>(lower_snake_case_regex, re2::RE2::Quiet)),
+      style_upper_snake_case_regex_(std::make_unique<re2::RE2>(
+          upper_snake_case_regex, re2::RE2::Quiet)) {}
 
 const LintRuleDescriptor &MacroNameStyleRule::GetDescriptor() {
   static const LintRuleDescriptor d{
       .name = "macro-name-style",
       .topic = "defines",
       .desc =
-          "Checks that macro names conform to a naming convention defined by "
-          "a RE2 regular expression. Exceptions are made for UVM like macros, "
-          "where macros named 'uvm_*' and 'UVM_*' follow 'lower_snake_case' "
-          "and 'UPPER_SNAKE_CASE' nameing conventions respectively.\n"
-          "Example common regex patterns:\n"
-          "  lower_snake_case: \"[a-z_0-9]+\"\n"
-          "  UPPER_SNAKE_CASE: \"[A-Z_0-9]+\"\n"
-          "  Title_Snake_Case: \"[A-Z]+[a-z0-9]*(_[A-Z0-9]+[a-z0-9]*)*\"\n"
-          "  Sentence_snake_case: \"([A-Z0-9]+[a-z0-9]*_?)([a-z0-9]*_*)*\"\n"
-          "  camelCase: \"([a-z0-9]+[A-Z0-9]*)+\"\n"
-          "  PascalCaseRegexPattern: \"([A-Z0-9]+[a-z0-9]*)+\"\n"
-          "RE2 regular expression syntax documentation can be found at "
-          "https://github.com/google/re2/wiki/syntax\n",
-      .param = {{"style_regex", UPPER_SNAKE_CASE_REGEX,
+          "Checks that macro names conform to a naming convention defined by a "
+          "RE2 regular expression. The default regex pattern expects "
+          "\"UPPER_SNAKE_CASE\". Exceptions are made for UVM like macros, "
+          "where macros named 'uvm_*' and 'UVM_*' follow \"lower_snake_case\" "
+          "and \"UPPER_SNAKE_CASE\" naming conventions respectively. Refer to "
+          "https://github.com/chipsalliance/verible/tree/master/verilog/tools/"
+          "lint#readme for more detail on verible regex patterns.",
+      .param = {{"style_regex", std::string(upper_snake_case_regex),
                  "A regex used to check macro names style."}},
   };
   return d;
+}
+
+std::string MacroNameStyleRule::CreateViolationMessage() {
+  return absl::StrCat("Macro name does not match the naming convention ",
+                      "defined by regex pattern: ", style_regex_->pattern());
 }
 
 void MacroNameStyleRule::HandleToken(const TokenInfo &token) {
@@ -135,7 +122,8 @@ void MacroNameStyleRule::HandleToken(const TokenInfo &token) {
           } else {
             // General case for everything else
             if (!RE2::FullMatch(text, *style_regex_)) {
-              violations_.insert(LintViolation(token, kMessage));
+              violations_.insert(
+                  LintViolation(token, CreateViolationMessage()));
             }
           }
           state_ = State::kNormal;
@@ -152,13 +140,7 @@ absl::Status MacroNameStyleRule::Configure(absl::string_view configuration) {
   using verible::config::SetRegex;
   absl::Status s = verible::ParseNameValues(
       configuration, {{"style_regex", SetRegex(&style_regex_)}});
-  if (!s.ok()) return s;
-
-  kMessage =
-      absl::StrCat("Macro name does not match the naming convention ",
-                   "defined by regex pattern: ", style_regex_->pattern());
-
-  return absl::OkStatus();
+  return s;
 }
 
 LintRuleStatus MacroNameStyleRule::Report() const {
