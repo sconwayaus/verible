@@ -29,40 +29,225 @@ namespace {
 using verible::LintTestCase;
 using verible::RunLintTestCases;
 
-// Tests that space-only text passes.
 TEST(MixedIndentationRuleTest, AcceptsText) {
   const std::initializer_list<LintTestCase> kTestCases = {
-      {""},
-      // {"module();\n"
-      // "  thing (\n"
-      // "\t\t.a       (0));\n"
-      // "endmodule"},
-      {"\t\tint a = /* some comment with spacing    */ 1;"},
-      // {"\t\tint a = /* some comment with spacing    */         1;"},
-      // {"   int /*\n"},
-      // {" asdas fas\n"},
-      // {" fa \n"},
-      // {" fasdf\n"},
-      // {" sdf */ a = 1;\n"},
+      // 4 Spaces
+      { "/*\n"
+        "*  4 Spaces: AcceptTest\n"
+        "    *\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces         \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "        // Comment only with leading spaces\n"
+        "\n"
+        "module test();\n"
+        "    int a;\n"
+        "\n"
+        "    some_module #(\n"
+        "            .DATA_W         (),\n"
+        "            .ADDR_W         ())\n"
+        "        rom (        // Some comment\n"
+        "            .addr_in        (),\n"
+        "            .data_out       ());\n"
+        "\n"
+        "    always_comb /* some inline comment */ begin\n"
+        "        for(int i = 0; i < N; i++) begin /*\n"
+        "            $display(\"     \");        // Should ignore quoted text..\n"
+        "            $display(\"            \");*/\n"
+        "            $display(\"\");            // Comment\n"
+        "        end\n"
+        "        if(a) begin\n"
+        "            a++;\n"
+        "        end\n"
+        "    end\n"
+        "\n"
+        "    initial $display(\"	\");     /*	*/ // some comment\n"
+        "    initial $display(\"\");   //			Some comment\n"
+        "endmodule\n"},
+      
+      // 3 Spaces
+      { "/*\n"
+        "*  3 Spaces: AcceptTest\n"
+        "   *\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces       \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "      // Comment only with leading spaces\n"
+        "\n"
+        "module test();\n"
+        "   int a;\n"
+        "\n"
+        "   some_module #(\n"
+        "         .DATA_W       (),\n"
+        "         .ADDR_W       ())\n"
+        "      rom (      // Some comment\n"
+        "         .addr_in      (),\n"
+        "         .data_out      ());\n"
+        "\n"
+        "   always_comb /* some inline comment */ begin\n"
+        "      for(int i = 0; i < N; i++) begin /*\n"
+        "         $display(\"    \");      // Should ignore quoted text..\n"
+        "         $display(\"         \");*/\n"
+        "         $display(\"\");         // Comment\n"
+        "      end\n"
+        "      if(a) begin\n"
+        "         a++;\n"
+        "      end\n"
+        "   end\n"
+        "\n"
+        "   initial $display(\"	\");    /*	*/ // some comment\n"
+        "   initial $display(\"\");   //			Some comment\n"
+        "endmodule\n"},
+
+      // Tabs
+      { "/*\n"
+        "*  Tabs: AcceptTest\n"
+        "	*\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces         \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "\t\t\t// Comment only with leading tabs\n"
+        "\n"
+        "module test();\n"
+        "	int a;\n"
+        "\n"
+        "	some_module #(\n"
+        "			.DATA_W			(),\n"
+        "			.ADDR_W			())\n"
+        "		rom (		// Some comment\n"
+        "			.addr_in		(),\n"
+        "			.data_out		());\n"
+        "\n"
+        "	always_comb /* some inline comment */ begin\n"
+        "		for(int i = 0; i < N; i++) begin /*\n"
+        "			$display(\"		\");		// Should ignore quoted text..\n"
+        "			$display(\"        \");*/\n"
+        "			$display(\"\");			// Comment\n"
+        "		end\n"
+        "		if(a) begin\n"
+        "			a++;\n"
+        "		end\n"
+        "	end\n"
+        "\n"
+        "	initial $display(\"	\");		/*	*/ // some comment\n"
+        "	initial $display(\"\");	//			Some comment\n"
+        "endmodule\n"},
   };
   RunLintTestCases<VerilogAnalyzer, MixedIndentationRule>(kTestCases);
 }
 
-// Tests that tabs are detected and reported.
-TEST(MixedIndentationRuleTest, RejectsTabs) {
-  // constexpr int kToken = TK_SPACE;
-  // const std::initializer_list<LintTestCase> kTestCases = {
-  //     // Expect only the first tab on any given line to be reported.
-  //     {{kToken, "\t"}},
-  //     {{kToken, "\t"}, "\t"},
-  //     {{kToken, "\t"}, "\n"},
-  //     {{kToken, "\t"}, "\n", {kToken, "\t"}, "\n"},
-  //     {"a", {kToken, "\t"}, "b\n\n1", {kToken, "\t"}, "2\n"},
-  //     {"module", {kToken, "\t"}, "foo;\nendmodule\n"},
-  //     {"module", {kToken, "\t"}, "\tfoo;\nendmodule\n"},
-  //     {"`define", {kToken, "\t"}, "IGNORANCE\t\"strength\"\n"},
-  // };
-  // RunLintTestCases<VerilogAnalyzer, MixedIndentationRule>(kTestCases);
+TEST(MixedIndentationRuleTest, RejectTests) {
+  constexpr int kToken = TK_SPACE;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      // 4 Spaces
+      { "/*\n"
+        "*  4 Spaces: RejectTests\n"
+        "   *\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces         \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "        // Comment only with leading spaces\n"
+        "\n"
+        "module test();\n"
+        "    int a;\n"
+        "\n"
+        "    some_module #(\n"
+        "            .DATA_W", {kToken, "\t\t"}, "(),\n",
+        {kToken, "\t        "}, ".ADDR_W         ())\n"
+        "        rom (        // Some comment\n"
+        "            .addr_in        (),\n"
+        "            .data_out       ());\n"
+        "\n"
+        "    always_comb /* some inline comment */ begin\n",
+        {kToken, "       "}, "for(int i = 0; i < N; i++) begin /*\n"
+        "            $display(\"     \");        // Should ignore quoted text..\n"
+        "        \t$display(\"            \");*/\n",
+        {kToken, "        \t"}, "$display(\"\");            // Comment\n",
+        {kToken, "    \t  "}, "end\n"
+        "        if(a) begin\n"
+        "            a++;\n",
+        {kToken, "\t       "}, "end\n"
+        "    end\n"
+        "\n"
+        "    initial $display(\"	\");     /*	*/ // some comment\n"
+        "    initial $display(\"\");   //			Some comment\n"
+        "endmodule\n"},
+      
+      // 3 Spaces
+      { "/*\n"
+        "*  3 Spaces: RejectTest\n"
+        "   *\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces       \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "      // Comment only with leading spaces\n"
+        "\n"
+        "module test();\n"
+        "   int a;\n"
+        "\n"
+        "   some_module #(\n"
+        "         .DATA_W       (),\n"
+        "         .ADDR_W       ())\n"
+        "      rom (      // Some comment\n"
+        "         .addr_in      (),\n"
+        "         .data_out      ());\n"
+        "\n"
+        "   always_comb /* some inline comment */ begin\n"
+        "      for(int i = 0; i < N; i++) begin /*\n"
+        "         $display(\"    \");      // Should ignore quoted text..\n"
+        "         $display(\"         \");*/\n"
+        "         $display(\"\");         // Comment\n"
+        "      end\n"
+        "      if(a) begin\n"
+        "         a++;\n"
+        "      end\n"
+        "   end\n"
+        "\n"
+        "   initial $display(\"	\");    /*	*/ // some comment\n"
+        "   initial $display(\"\");   //			Some comment\n"
+        "endmodule\n"},
+
+      // Tabs
+      { "/*\n"
+        "*  Tabs: RejectTest\n"
+        "	*\t\t  */\n"
+        "\n"
+        "// Comment\n"
+        "// Another comment   with multiple spaces         \n"
+        "// Another comment\t\twith tabs	in it\t\t\n"
+        "\t\t\t// Comment only with leading tabs\n"
+        "\n"
+        "module test();\n"
+        "	int a;\n"
+        "\n"
+        "	some_module #(\n"
+        "			.DATA_W			(),\n"
+        "			.ADDR_W", {kToken, " 			"}, "())\n"
+        "		rom (", {kToken, " 			"}, "// Some comment\n"
+        "			.addr_in		(),\n"
+        "			.data_out		());\n"
+        "\n"
+        "	always_comb /* some inline comment */ begin\n",
+        {kToken, "        "},"for(int i = 0; i < N; i++) begin /*\n"
+        "			$display(\"      \");		// Should ignore quoted text..\n"
+        "			$display(\"			\");*/\n"
+        "			$display(\"       \");", {kToken, " 			"}, "// Comment\n",
+        {kToken, "		 "}, "end\n",
+        {kToken, "	 	"}, "if(a) begin\n",
+        {kToken, " 			"}, "a++;\n"
+        "		end\n"
+        "	end\n"
+        "\n"
+        "	initial $display(\"	\");		/*	*/ // some comment\n"
+        "	initial $display(\"\");	//     Some comment\n"
+        "endmodule\n"},
+  };
+  RunLintTestCases<VerilogAnalyzer, MixedIndentationRule>(kTestCases);
 }
 
 }  // namespace

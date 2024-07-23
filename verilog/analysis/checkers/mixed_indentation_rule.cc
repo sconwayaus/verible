@@ -53,15 +53,103 @@ const LintRuleDescriptor &MixedIndentationRule::GetDescriptor() {
   return d;
 }
 
-typedef enum {
-  STATE_TEXT,
-  STATE_IN_BLOCK_COMMENT,
-} State_t;
-
-void MixedIndentationRule::Lint(
-    const verible::TextStructureView &text_structure,
+void MixedIndentationRule::Lint(const verible::TextStructureView &text_structure,
     absl::string_view filename) {
 
+  // First determine the indentation in the file
+  FindFileIndentation(text_structure);
+
+  // Now parse the file for violations
+  ParseIndentation(text_structure);
+}
+
+/**
+ * Checks the whitespace string contains only expected characters
+ */
+bool MixedIndentationRule::isIndentPure(absl::string_view whitespace) {
+  absl::string_view::size_type num_valid_indent_chars =
+      whitespace.find_first_not_of(indent_use_spaces ? " " : "\t");
+  bool isPure = num_valid_indent_chars == absl::string_view::npos;
+  if (!isPure) {
+    const TokenInfo token(TK_SPACE, whitespace);
+    if (indent_use_spaces) {
+      violations_.insert(LintViolation(
+          token, absl::StrCat("Mixed indentation style using tabs and spaces "
+                              "(0). Expected indent style: ",
+                              num_indent_spaces, " spaces")));
+    } else {
+      violations_.insert(LintViolation(
+          token, absl::StrCat("Mixed indentation style using tabs and spaces "
+                              "(1). Expected indent style: tabs")));
+    }
+  }
+
+  return isPure;
+}
+
+bool MixedIndentationRule::CheckLeadingSpacingIndent(absl::string_view whitespace) {
+  if ((whitespace.length() % num_indent_spaces) != 0) {
+    const TokenInfo token(TK_SPACE, whitespace);
+
+    violations_.insert(LintViolation(
+        token, absl::StrCat("Incorrect number of spaces used for indentation. "
+                            "Expected indent style: ",
+                            num_indent_spaces, " spaces")));
+    return false;
+  }
+
+  return true;
+}
+
+void MixedIndentationRule::CheckIndentation(const verible::TextStructureView &text_structure, absl::string_view segment) {
+  absl::string_view::size_type start_pos = 0;
+  do {
+    if (indent_use_spaces) {
+      // Find the first tab character and report that
+      start_pos = segment.find('\t', start_pos);
+      if (start_pos != absl::string_view::npos) {
+        absl::string_view::size_type end_pos =
+            segment.find_first_not_of("\t", start_pos);
+        verible::LineColumnRange range =
+            text_structure.GetRangeForText(segment.substr(start_pos, end_pos-start_pos));
+        TokenInfo token = text_structure.FindTokenAt(range.start);
+
+        if (token.token_enum() == TK_SPACE) {
+          violations_.insert(LintViolation(
+              token, absl::StrCat("Mixed indentation style using tabs and "
+                                  "spaces (2). Expected indent style: ",
+                                  num_indent_spaces, " spaces")));
+        }
+        start_pos = end_pos;
+      }
+    } else {
+      // Indent using tabs, so check for spaces that are 2 or more
+      start_pos = segment.find_first_of(" \t", start_pos);
+      if (start_pos != absl::string_view::npos) {
+        absl::string_view::size_type end_pos =
+            segment.find_first_not_of(" \t", start_pos);
+
+        absl::string_view whitespace = segment.substr(start_pos, end_pos-start_pos);
+
+        if(whitespace.length() > 1) {
+          verible::LineColumnRange range =
+              text_structure.GetRangeForText(whitespace);
+          TokenInfo token = text_structure.FindTokenAt(range.start);
+
+          if (token.token_enum() == TK_SPACE) {
+            isIndentPure(whitespace);
+            // violations_.insert(LintViolation(
+            //     token, absl::StrCat("Mixed indentation style using tabs and "
+            //                         "spaces (3). Expected indent style: tabs")));
+          }
+        }
+        start_pos = end_pos;
+      }
+    }
+  } while (start_pos != absl::string_view::npos);
+}
+
+void MixedIndentationRule::FindFileIndentation(const verible::TextStructureView &text_structure) {
   // Find expected whitespace by looking at the leading space
   const std::vector<absl::string_view> &lines = text_structure.Lines();
   int num_lines_starting_with_spaces = 0;
@@ -116,112 +204,22 @@ void MixedIndentationRule::Lint(
     }
   }
 
-  bool indent_use_spaces =
-      num_lines_starting_with_spaces > num_lines_starting_with_tabs;
+  indent_use_spaces = num_lines_starting_with_spaces > num_lines_starting_with_tabs;
 
-  // How many spaces?
+  // Determine the number of spaces to indent
+  num_indent_spaces = 2;
   int max = 0;
-  int num_spaces = 2;
   if (indent_use_spaces) {
     for (int i = 1; i < NUM_HISTOGRAM_BINS; i++) {
       if (indents_histogram[i] > max) {
         max = indents_histogram[i];
-        num_spaces = i;
+        num_indent_spaces = i;
       }
     }
   }
-
-  ParseIndentation(text_structure, indent_use_spaces, num_spaces);
 }
 
-/**
- * Checks the whitespace string contains only expected characters
- */
-bool MixedIndentationRule::isIndentPure(absl::string_view whitespace,
-                                        const int indent_use_spaces,
-                                        const int num_indent_spaces) {
-  absl::string_view::size_type num_valid_indent_chars =
-      whitespace.find_first_not_of(indent_use_spaces ? " " : "\t");
-  bool isPure = num_valid_indent_chars == absl::string_view::npos;
-  if (!isPure) {
-    const TokenInfo token(TK_SPACE, whitespace);
-    if (indent_use_spaces) {
-      violations_.insert(LintViolation(
-          token, absl::StrCat("Mixed indentation style using tabs and spaces "
-                              "(0). Expected indent style: ",
-                              num_indent_spaces, " spaces")));
-    } else {
-      violations_.insert(LintViolation(
-          token, absl::StrCat("Mixed indentation style using tabs and spaces "
-                              "(1). Expected indent style: tabs")));
-    }
-  }
-
-  return isPure;
-}
-
-bool MixedIndentationRule::checkLeadingSpacingIndent(
-    absl::string_view whitespace, const int num_indent_spaces) {
-  if ((whitespace.length() % num_indent_spaces) != 0) {
-    const TokenInfo token(TK_SPACE, whitespace);
-
-    violations_.insert(LintViolation(
-        token, absl::StrCat("Incorrect number of spaces used for indentation. "
-                            "Expected indent style: ",
-                            num_indent_spaces, " spaces")));
-    return false;
-  }
-
-  return true;
-}
-
-void MixedIndentationRule::CheckIndentation(
-    const verible::TextStructureView &text_structure, absl::string_view segment,
-    const int indent_use_spaces, const int num_indent_spaces) {
-  absl::string_view::size_type start_pos = 0;
-  do {
-    if (indent_use_spaces) {
-      // Find the first tab character and report that
-      start_pos = segment.find('\t', start_pos);
-      if (start_pos != absl::string_view::npos) {
-        absl::string_view::size_type end_pos =
-            segment.find_first_not_of("\t", start_pos);
-        verible::LineColumnRange range =
-            text_structure.GetRangeForText(segment.substr(start_pos, end_pos));
-        TokenInfo token = text_structure.FindTokenAt(range.start);
-
-        if (token.token_enum() == TK_SPACE) {
-          violations_.insert(LintViolation(
-              token, absl::StrCat("Mixed indentation style using tabs and "
-                                  "spaces (2). Expected indent style: ",
-                                  num_indent_spaces, " spaces")));
-        }
-        start_pos = end_pos;
-      }
-    } else {
-      // Indent using tabs, so check for spaces that are 2 or more
-      start_pos = segment.find("  ", start_pos);
-      if (start_pos != absl::string_view::npos) {
-        absl::string_view::size_type end_pos =
-            segment.find_first_not_of(" ", start_pos);
-        verible::LineColumnRange range =
-            text_structure.GetRangeForText(segment.substr(start_pos, end_pos));
-        TokenInfo token = text_structure.FindTokenAt(range.start);
-
-        if (token.token_enum() == TK_SPACE) {
-          violations_.insert(LintViolation(
-              token, absl::StrCat("Mixed indentation style using tabs and "
-                                  "spaces (3). Expected indent style: tabs")));
-        }
-        start_pos = end_pos;
-      }
-    }
-  } while (start_pos != absl::string_view::npos);
-}
-
-void MixedIndentationRule::ParseIndentation(
-    const verible::TextStructureView &text_structure,
-    const int indent_use_spaces, const int num_indent_spaces) {
+void MixedIndentationRule::ParseIndentation(const verible::TextStructureView &text_structure) {
   const std::vector<absl::string_view> &lines = text_structure.Lines();
   for (absl::string_view line : lines) {
     // Ignore empty lines
@@ -242,17 +240,16 @@ void MixedIndentationRule::ParseIndentation(
 
       if (token.token_enum() == TK_SPACE) {
         bool is_pure =
-            isIndentPure(leading_indent, indent_use_spaces, num_indent_spaces);
+            isIndentPure(leading_indent);
 
         if (is_pure && indent_use_spaces) {
-          checkLeadingSpacingIndent(leading_indent, num_indent_spaces);
+          CheckLeadingSpacingIndent(leading_indent);
         }
       }
       line = line.substr(pos);
     }
 
-    CheckIndentation(text_structure, line, indent_use_spaces,
-                     num_indent_spaces);
+    CheckIndentation(text_structure, line);
   }
 }
 
