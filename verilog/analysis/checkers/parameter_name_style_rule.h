@@ -15,7 +15,6 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_PARAMETER_NAME_STYLE_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_PARAMETER_NAME_STYLE_RULE_H_
 
-#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
@@ -42,6 +41,9 @@ class ParameterNameStyleRule : public verible::SyntaxTreeLintRule {
 
   static const LintRuleDescriptor &GetDescriptor();
 
+  std::string CreateLocalparamViolationMessage();
+  std::string CreateParameterViolationMessage();
+
   void HandleSymbol(const verible::Symbol &symbol,
                     const verible::SyntaxTreeContext &context) final;
 
@@ -55,9 +57,6 @@ class ParameterNameStyleRule : public verible::SyntaxTreeLintRule {
   // A regex to check the style against
   std::unique_ptr<re2::RE2> localparam_style_regex_;
   std::unique_ptr<re2::RE2> parameter_style_regex_;
-
-  std::string kLocalparamErrorMessage;
-  std::string kParameterErrorMessage;
 };
 
 }  // namespace analysis

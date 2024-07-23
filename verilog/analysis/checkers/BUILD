@@ -1783,7 +1783,6 @@ cc_library(
         "//common/analysis:syntax-tree-lint-rule",
         "//common/analysis/matcher",
         "//common/analysis/matcher:bound-symbol-manager",
-        "//common/strings:naming-utils",
         "//common/text:config-utils",
         "//common/text:symbol",
         "//common/text:syntax-tree-context",
