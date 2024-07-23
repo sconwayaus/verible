@@ -46,6 +46,7 @@ cc_library(
         ":macro-name-style-rule",
         ":macro-string-concatenation-rule",
         ":mismatched-labels-rule",
+        ":mixed-indentation-rule",
         ":module-begin-block-rule",
         ":module-filename-rule",
         ":module-instantiation-rules",
@@ -384,6 +385,39 @@ cc_test(
         ":mismatched-labels-rule",
         "//common/analysis:linter-test-utils",
         "//common/analysis:syntax-tree-linter-test-utils",
+        "//verilog/analysis:verilog-analyzer",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "mixed-indentation-rule",
+    srcs = ["mixed_indentation_rule.cc"],
+    hdrs = ["mixed_indentation_rule.h"],
+    deps = [
+        "//common/analysis:lint-rule-status",
+        "//common/analysis:text-structure-lint-rule",
+        "//common/strings:comment-utils",
+        "//common/text:text-structure",
+        "//common/text:token-info",
+        "//verilog/analysis:descriptions",
+        "//verilog/analysis:lint-rule-registry",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_absl//absl/strings:string_view",
+        "@com_googlesource_code_re2//:re2",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "mixed-indentation-rule_test",
+    srcs = ["mixed_indentation_rule_test.cc"],
+    deps = [
+        ":mixed-indentation-rule",
+        "//common/analysis:text-structure-linter-test-utils",
+        "//common/analysis:linter-test-utils",
         "//verilog/analysis:verilog-analyzer",
         "//verilog/parser:verilog-token-enum",
         "@com_google_googletest//:gtest",
