@@ -35,31 +35,31 @@ class MixedIndentationRule : public verible::TextStructureLintRule {
 
   MixedIndentationRule() = default;
 
-  // void HandleLineSection(absl::string_view line,
-  //                        absl::string_view::size_type start_pos,
-  //                        absl::string_view::size_type end_pos);
-
   void Lint(const verible::TextStructureView &text_structure,
             absl::string_view filename) final;
 
-  bool isIndentPure(absl::string_view whitespace, const int indent_is_spaces,
-                    const int num_indent_spaces);
+  bool isIndentPure(absl::string_view whitespace);
 
-  bool checkLeadingSpacingIndent(absl::string_view whitespace,
-                                 const int num_indent_spaces);
+  bool CheckLeadingSpacingIndent(absl::string_view whitespace);
 
-  void CheckIndentation(const verible::TextStructureView &text_structure,
-                        absl::string_view segment, const int indent_is_spaces,
-                        const int num_indent_spaces);
+  void CheckIndentation(const verible::TextStructureView &text_structure, absl::string_view segment);
 
-  void ParseIndentation(const verible::TextStructureView &text_structure,
-                        const int indent_is_spaces, const int num_spaces);
+  void FindFileIndentation(const verible::TextStructureView &text_structure);
+
+  void ParseIndentation(const verible::TextStructureView &text_structure);
 
   verible::LintRuleStatus Report() const final;
 
  private:
   // Collection of found violations.
   std::set<verible::LintViolation> violations_;
+
+  // True: Indent using spaces
+  // False: Indent using tabs
+  bool indent_use_spaces;
+
+  // Number of spaces to indent (if indent_use_spaces is true)
+  int num_indent_spaces;
 };
 
 }  // namespace analysis
