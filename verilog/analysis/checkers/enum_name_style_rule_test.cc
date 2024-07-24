@@ -89,45 +89,45 @@ TEST(EnumNameStyleRuleTest, InvalidEnumNames) {
       {"typedef enum ", {kToken, "e"}, ";"},
       {"typedef enum ", {kToken, "_"}, ";"},
       {"typedef enum ", {kToken, "foo_"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "HelloWorld"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_baz"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "Bad_name"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "bad_Name"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "Bad2"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "very_Bad_name"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "wrong_ending"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_t"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "t"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_e"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "e"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_T"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "T"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_E"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "E"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "_"}, ";"},
-      {"typedef enum {foo, bar} ", {kToken, "foo_"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "HelloWorld"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_baz"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "Bad_name"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "bad_Name"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "Bad2"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "very_Bad_name"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "wrong_ending"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_t"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "t"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_e"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "e"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_T"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "T"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_E"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "E"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "_"}, ";"},
+      {"typedef enum {Foo, Bar} ", {kToken, "foo_"}, ";"},
       // Declarations inside a class
       {"class foo;\n"
-       "typedef enum {foo, bar} ",
+       "typedef enum {Foo, Bar} ",
        {kToken, "HelloWorld"},
        ";\n"
        "HelloWorld hi;\n"
        "endclass"},
       {"class foo;\n"
-       "typedef enum {bar, baz} ",
+       "typedef enum {Bar, Baz} ",
        {kToken, "bad_"},
        ";\n"
        "bad_ hi;\n"
        "endclass"},
       // Declarations inside a module
       {"module foo;\n"
-       "typedef enum {bar, baz} ",
+       "typedef enum {Bar, Baz} ",
        {kToken, "HelloWorld"},
        ";\n"
        "HelloWorld hi;\n"
        "endmodule"},
       {"module foo;\n"
-       "typedef enum {bar, baz} ",
+       "typedef enum {Bar, Baz} ",
        {kToken, "bad_"},
        ";\n"
        "bad_ hi;\n"
@@ -136,15 +136,70 @@ TEST(EnumNameStyleRuleTest, InvalidEnumNames) {
   RunLintTestCases<VerilogAnalyzer, EnumNameStyleRule>(kTestCases);
 }
 
+TEST(EnumNameStyleRuleTest, InvalidEnumNameDeclarations) {
+  constexpr int kToken = SymbolIdentifier;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      {"typedef enum {", {kToken, "foo"}, ", Bar} hello_world_e;"},
+      {"typedef enum {",
+       {kToken, "Foo_Bar"},
+       ", ",
+       {kToken, "bar"},
+       "} baz_t;"},
+      {"typedef enum {",
+       {kToken, "_FOO"},
+       ", ",
+       {kToken, "bar"},
+       "} good_name_t;"},
+      {"typedef enum {Foo, ", {kToken, "BAR_"}, "} good_name_e;"},
+      {"typedef enum {Foo, ", {kToken, "Bar_Baz"}, "} good2_t;"},
+      {"typedef enum {Foo, ", {kToken, "bar"}, "} really_good_name_e;"},
+      // Declarations inside a class
+      {"class foo;\n"
+       "typedef enum {",
+       {kToken, "foo"},
+       ", Bar} ",
+       "hello_world_t",
+       ";\n"
+       "hello_world_t hi;\n"
+       "endclass"},
+      {"class foo;\n"
+       "typedef enum {Bar, ",
+       {kToken, "baz"},
+       "} ",
+       "bad_e"
+       ";\n"
+       "bad_e hi;\n"
+       "endclass"},
+      // Declarations inside a module
+      {"module foo;\n"
+       "typedef enum {Bar, ",
+       {kToken, "bar_baz"},
+       "} ",
+       "hello_world_t",
+       ";\n"
+       "hello_world_t hi;\n"
+       "endmodule"},
+      {"module foo;\n"
+       "typedef enum {",
+       {kToken, "bar"},
+       ", Baz} ",
+       "bad_e",
+       ";\n"
+       "bad_e hi;\n"
+       "endmodule"},
+  };
+  RunLintTestCases<VerilogAnalyzer, EnumNameStyleRule>(kTestCases);
+}
+
 TEST(EnumNameStyleRuleTest, UncheckedCases) {
   const std::initializer_list<LintTestCase> kTestCases = {
       // No name to check
-      {"enum {foo, bar} baz;"},
+      {"enum {Foo, Bar} baz;"},
       {"class foo;\n"
-       "enum {foo, bar} baz;\n"
+       "enum {Foo, Bar} baz;\n"
        "endclass"},
       {"module foo;\n"
-       "enum {foo, bar} baz;\n"
+       "enum {Foo, Bar} baz;\n"
        "endmodule"},
       // Struct and unions typedefs should not be checked here
       {"typedef struct {logic foo; logic bar;} baz_t;"},
@@ -203,6 +258,54 @@ TEST(EnumNameStyleRuleTest, UpperSnakeCaseTests) {
   };
   RunConfiguredLintTestCases<VerilogAnalyzer, EnumNameStyleRule>(
       kTestCases, "style_regex:[A-Z_0-9]+(_T|_E)");
+}
+
+TEST(EnumNameStyleRuleTest, UpperSnakeCaseEnumNameDeclarationTests) {
+  constexpr int kToken = SymbolIdentifier;
+  const std::initializer_list<LintTestCase> kTestCases = {
+      {"typedef enum {", {kToken, "foo"}, ", BAR} hello_world_e;"},
+      {"typedef enum {",
+       {kToken, "Foo_Bar"},
+       ", ",
+       {kToken, "bar"},
+       "} baz_t;"},
+      {"typedef enum {_FOO, ", {kToken, "bar"}, "} good_name_t;"},
+      {"typedef enum {FOO, BAR_} good_name_e;"},
+      {"typedef enum {FOO, ", {kToken, "Bar_Baz"}, "} good2_t;"},
+      {"typedef enum {FOO, ", {kToken, "bar"}, "} really_good_name_e;"},
+      // Declarations inside a class
+      {"class foo;\n"
+       "typedef enum {",
+       {kToken, "foo"},
+       ", BAR} ",
+       "hello_world_t",
+       ";\n"
+       "hello_world_t hi;\n"
+       "endclass"},
+      {"class foo;\n"
+       "typedef enum {FOO, BAR_BAZ} ",
+       "bad_e"
+       ";\n"
+       "bad_e hi;\n"
+       "endclass"},
+      // Declarations inside a module
+      {"module foo;\n"
+       "typedef enum {BAR, ",
+       {kToken, "bar_baz"},
+       "} ",
+       "hello_world_t",
+       ";\n"
+       "hello_world_t hi;\n"
+       "endmodule"},
+      {"module foo;\n"
+       "typedef enum {FOO_BAR, BAZ} ",
+       "bad_e",
+       ";\n"
+       "bad_e hi;\n"
+       "endmodule"},
+  };
+  RunConfiguredLintTestCases<VerilogAnalyzer, EnumNameStyleRule>(
+      kTestCases, "enum_name_style_regex:[A-Z_]+");
 }
 
 }  // namespace

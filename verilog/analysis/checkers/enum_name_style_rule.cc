@@ -45,30 +45,45 @@ using verible::SyntaxTreeContext;
 using verible::matcher::Matcher;
 
 static constexpr absl::string_view style_default_regex = "[a-z_0-9]+(_t|_e)";
+static constexpr absl::string_view enum_name_default_regex =
+    "([A-Z0-9]+[a-z0-9]*)+";
 
 EnumNameStyleRule::EnumNameStyleRule()
     : style_regex_(
-          std::make_unique<re2::RE2>(style_default_regex, re2::RE2::Quiet)) {}
+          std::make_unique<re2::RE2>(style_default_regex, re2::RE2::Quiet)),
+      enum_name_style_regex_(std::make_unique<re2::RE2>(enum_name_default_regex,
+                                                        re2::RE2::Quiet)) {}
 
 const LintRuleDescriptor &EnumNameStyleRule::GetDescriptor() {
   static const LintRuleDescriptor d{
       .name = "enum-name-style",
       .topic = "enumerations",
       .desc =
-          "Checks that enum type names follow a naming convention defined by a "
-          "RE2 regular expression. The default regex pattern expects "
-          "\"lower_snake_case\" with either a \"_t\" or \"_e\" suffix. Refer "
-          "to "
+          "Checks that enum type names and enum name declarations follow a "
+          "naming convention defined by a RE2 regular expression. The default "
+          "regex pattern for enum types expects \"lower_snake_case\" with "
+          "either a \"_t\" or \"_e\" suffix, and enum name declarations expect "
+          "\"PascalCase\". Refer to "
           "https://github.com/chipsalliance/verible/tree/master/verilog/tools/"
           "lint#readme for more detail on verible regex patterns.",
-      .param = {{"style_regex", std::string(style_default_regex),
-                 "A regex used to check enum type name style."}},
+      .param =
+          {
+              {"style_regex", std::string(style_default_regex),
+               "A regex used to check enum type name style."},
+              {"enum_name_style_regex", std::string(enum_name_default_regex),
+               "A regex used to check enum name declarations."},
+          },
   };
   return d;
 }
 
 static const Matcher &TypedefMatcher() {
   static const Matcher matcher(NodekTypeDeclaration());
+  return matcher;
+}
+
+static const Matcher &EnumNameMatcher() {
+  static const Matcher matcher(NodekEnumName());
   return matcher;
 }
 
@@ -94,13 +109,22 @@ void EnumNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
       // Not an enum definition
       return;
     }
+  } else if (EnumNameMatcher().Matches(symbol, &manager)) {
+    const auto *identifier_leaf = GetSymbolIdentifierFromEnumName(symbol);
+    const auto name = ABSL_DIE_IF_NULL(identifier_leaf)->get().text();
+    if (!RE2::FullMatch(name, *enum_name_style_regex_)) {
+      violations_.insert(LintViolation(identifier_leaf->get(),
+                                       CreateViolationMessage(), context));
+    }
   }
 }
 
 absl::Status EnumNameStyleRule::Configure(absl::string_view configuration) {
   using verible::config::SetRegex;
   absl::Status s = verible::ParseNameValues(
-      configuration, {{"style_regex", SetRegex(&style_regex_)}});
+      configuration,
+      {{"style_regex", SetRegex(&style_regex_)},
+       {"enum_name_style_regex", SetRegex(&enum_name_style_regex_)}});
   return s;
 }
 

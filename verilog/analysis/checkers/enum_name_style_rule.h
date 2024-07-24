@@ -53,8 +53,11 @@ class EnumNameStyleRule : public verible::SyntaxTreeLintRule {
  private:
   std::set<verible::LintViolation> violations_;
 
-  // A regex to check the style against
+  // A regex to check enum type name style
   std::unique_ptr<re2::RE2> style_regex_;
+
+  // A regex to check enum name declaration style
+  std::unique_ptr<re2::RE2> enum_name_style_regex_;
 };
 
 }  // namespace analysis
