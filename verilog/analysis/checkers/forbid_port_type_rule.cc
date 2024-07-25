@@ -131,9 +131,9 @@ void ForbidPortTypeRule::HandleSymbol(const Symbol &symbol,
       if(type == "logic") {
         violations_.insert(LintViolation(*token, "'inout logic' invalid. Use 'inout wire' instead.", context));
       } else if(type == "var") {
-        violations_.insert(LintViolation(*token, "'inout logic' invalid. Use 'inout wire' instead.", context));
+        violations_.insert(LintViolation(*token, "'inout var' invalid. Use 'inout wire' instead.", context));
       } else if(type == "reg") {
-        violations_.insert(LintViolation(*token, "'inout logic' invalid. Use 'inout wire' instead.", context));
+        violations_.insert(LintViolation(*token, "'inout reg' invalid. Use 'inout wire' instead.", context));
       }
     }
   }
