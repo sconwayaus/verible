@@ -33,7 +33,7 @@ namespace analysis {
 
 // SignalNameStyleRule checks that signal names follow
 // a naming convention matching a regex pattern.
-// Signals are defined as "a net, variable, or port within a
+// Signals are defined as "a net or variable within a
 // SystemVerilog design".
 class SignalNameStyleRule : public verible::SyntaxTreeLintRule {
  public:
