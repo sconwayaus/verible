@@ -50,6 +50,15 @@ const verible::SyntaxTreeLeaf *GetIdentifierFromPortDeclaration(
 const verible::SyntaxTreeLeaf *GetDirectionFromPortDeclaration(
     const verible::Symbol &);
 
+// Extract the interface name from a port declaration
+// Can return nullptr if the port is not an interface port
+const verible::Symbol *GetInterfaceHeaderNodeFromPortDeclaration(const verible::Symbol &symbol);
+
+// Extract the interface modport name from an interface port declaration
+// Can return nullptr if the port is not an interface and has no modport
+const verible::SyntaxTreeLeaf *GetInterfaceModPortFromInterfaceHeaderNode(
+    const verible::Symbol &);
+
 // FIXME: Add comments here
 const verible::SyntaxTreeNode *GetDataTypeNodeFromPortDeclaration(
     const verible::Symbol &symbol);

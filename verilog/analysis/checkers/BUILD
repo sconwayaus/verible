@@ -59,6 +59,7 @@ cc_library(
         ":parameter-name-style-rule",
         ":parameter-type-name-style-rule",
         ":plusarg-assignment-rule",
+        ":port-name-style-rule",
         ":port-name-suffix-rule",
         ":positive-meaning-parameter-name-rule",
         ":posix-eof-rule",
@@ -1919,6 +1920,44 @@ cc_test(
     srcs = ["plusarg_assignment_rule_test.cc"],
     deps = [
         ":plusarg-assignment-rule",
+        "//common/analysis:linter-test-utils",
+        "//common/analysis:syntax-tree-linter-test-utils",
+        "//verilog/analysis:verilog-analyzer",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "port-name-style-rule",
+    srcs = ["port_name_style_rule.cc"],
+    hdrs = ["port_name_style_rule.h"],
+    deps = [
+        "//common/analysis:lint-rule-status",
+        "//common/analysis:syntax-tree-lint-rule",
+        "//common/analysis/matcher",
+        "//common/analysis/matcher:bound-symbol-manager",
+        "//common/text:symbol",
+        "//common/text:syntax-tree-context",
+        "//common/text:token-info",
+        "//common/text:config-utils",
+        "//common/util:logging",
+        "//verilog/CST:port",
+        "//verilog/CST:verilog-matchers",
+        "//verilog/analysis:descriptions",
+        "//verilog/analysis:lint-rule-registry",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "port-name-style-rule_test",
+    srcs = ["port_name_style_rule_test.cc"],
+    deps = [
+        ":port-name-style-rule",
         "//common/analysis:linter-test-utils",
         "//common/analysis:syntax-tree-linter-test-utils",
         "//verilog/analysis:verilog-analyzer",

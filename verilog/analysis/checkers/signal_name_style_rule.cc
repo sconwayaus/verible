@@ -33,7 +33,6 @@
 #include "re2/re2.h"
 #include "verilog/CST/data.h"
 #include "verilog/CST/net.h"
-#include "verilog/CST/port.h"
 #include "verilog/CST/verilog_matchers.h"
 #include "verilog/analysis/descriptions.h"
 #include "verilog/analysis/lint_rule_registry.h"
@@ -60,8 +59,8 @@ const LintRuleDescriptor &SignalNameStyleRule::GetDescriptor() {
       .topic = "signal-conventions",
       .desc =
           "Checks that signal names conform to a naming convention defined by "
-          "a RE2 regular expression. Signals are defined as \"a net, variable, "
-          "or port within a SystemVerilog design\". The default regex pattern "
+          "a RE2 regular expression. Signals are defined as \"a net or "
+          "variable within a SystemVerilog design\". The default regex pattern "
           "expects \"lower_snake_case\". Refer to "
           "https://github.com/chipsalliance/verible/tree/master/verilog/tools/"
           "lint#readme for more detail on verible regex patterns.",
@@ -69,11 +68,6 @@ const LintRuleDescriptor &SignalNameStyleRule::GetDescriptor() {
                  "A regex used to check signal names style."}},
   };
   return d;
-}
-
-static const Matcher &PortMatcher() {
-  static const Matcher matcher(NodekPortDeclaration());
-  return matcher;
 }
 
 static const Matcher &NetMatcher() {
@@ -94,14 +88,7 @@ std::string SignalNameStyleRule::CreateViolationMessage() {
 void SignalNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
                                        const SyntaxTreeContext &context) {
   verible::matcher::BoundSymbolManager manager;
-  if (PortMatcher().Matches(symbol, &manager)) {
-    const auto *identifier_leaf = GetIdentifierFromPortDeclaration(symbol);
-    const auto name = ABSL_DIE_IF_NULL(identifier_leaf)->get().text();
-    if (!RE2::FullMatch(name, *style_regex_)) {
-      violations_.insert(LintViolation(identifier_leaf->get(),
-                                       CreateViolationMessage(), context));
-    }
-  } else if (NetMatcher().Matches(symbol, &manager)) {
+  if (NetMatcher().Matches(symbol, &manager)) {
     const auto identifier_leaves = GetIdentifiersFromNetDeclaration(symbol);
     for (const auto *leaf : identifier_leaves) {
       const auto name = leaf->text();

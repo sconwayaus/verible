@@ -34,35 +34,6 @@ TEST(SignalNameStyleRuleTest, DefaultTests) {
   constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
-      // Tests for module ports
-      {"module foo(input logic b_a_r); endmodule"},
-      {"module foo(input wire hello_world1); endmodule"},
-      {"module foo(wire ", {kToken, "HelloWorld"}, "); endmodule"},
-      {"module foo(input logic [3:0] ", {kToken, "Foo_bar"}, "); endmodule"},
-      {"module foo(input logic b_a_r [3:0]); endmodule"},
-      {"module foo(input logic [3:0] ",
-       {kToken, "Bar"},
-       ", input logic ",
-       {kToken, "Bar2"},
-       " [4]); endmodule"},
-      {"module foo(input logic hello_world, input bar); endmodule"},
-      {"module foo(input logic hello_world, input ",
-       {kToken, "b_A_r"},
-       "); endmodule"},
-      {"module foo(input logic ",
-       {kToken, "HelloWorld"},
-       ", output ",
-       {kToken, "Bar"},
-       "); endmodule"},
-      {"module foo(input logic ",
-       {kToken, "hello_World"},
-       ", wire b_a_r = 1); endmodule"},
-      {"module foo(input hello_world, output b_a_r, input wire bar2); "
-       "endmodule"},
-      {"module foo(input hello_world, output b_a_r, input wire ",
-       {kToken, "Bad"},
-       "); "
-       "endmodule"},
       // Tests for nets
       {"module foo; wire single_net; endmodule"},
       {"module foo; wire first_net, second_net; endmodule"},
@@ -112,35 +83,6 @@ TEST(SignalNameStyleRuleTest, UpperSnakeCaseTests) {
   constexpr int kToken = SymbolIdentifier;
   const std::initializer_list<LintTestCase> kTestCases = {
       {""},
-      // Tests for module ports
-      {"module foo(input logic B_A_R); endmodule"},
-      {"module foo(input wire HELLO_WORLD1); endmodule"},
-      {"module foo(wire ", {kToken, "HelloWorld"}, "); endmodule"},
-      {"module foo(input logic [3:0] ", {kToken, "Foo_bar"}, "); endmodule"},
-      {"module foo(input logic B_A_R [3:0]); endmodule"},
-      {"module foo(input logic [3:0] ",
-       {kToken, "Bar"},
-       ", input logic ",
-       {kToken, "Bar2"},
-       " [4]); endmodule"},
-      {"module foo(input logic HELLO_WORLD, input BAR); endmodule"},
-      {"module foo(input logic HELLO_WORLD, input ",
-       {kToken, "b_A_r"},
-       "); endmodule"},
-      {"module foo(input logic ",
-       {kToken, "HelloWorld"},
-       ", output ",
-       {kToken, "Bar"},
-       "); endmodule"},
-      {"module foo(input logic ",
-       {kToken, "hello_World"},
-       ", wire B_A_R = 1); endmodule"},
-      {"module foo(input HELLO_WORLD, output B_A_R, input wire BAR2); "
-       "endmodule"},
-      {"module foo(input HELLO_WORLD, output B_A_R, input wire ",
-       {kToken, "Bad"},
-       "); "
-       "endmodule"},
       // Tests for nets
       {"module foo; wire SINGLE_NET; endmodule"},
       {"module foo; wire FIRST_NET, SECOND_NET; endmodule"},

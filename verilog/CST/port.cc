@@ -135,6 +135,25 @@ const SyntaxTreeLeaf *GetInterfaceModPortFromInterfaceHeaderNode(const Symbol &s
   return nullptr;
 }
 
+const Symbol *GetInterfaceHeaderNodeFromPortDeclaration(const Symbol &symbol) {
+  if (const auto *data_type_node = GetSubtreeAsNode(symbol, NodeEnum::kPortDeclaration, 2, NodeEnum::kDataType)) {
+    if(const auto *interface_port_header_node = GetSubtreeAsNode(*data_type_node, NodeEnum::kDataType, 1)) {
+      if(NodeEnum(interface_port_header_node->Tag().tag) == NodeEnum::kInterfacePortHeader) {
+        return &SymbolCastToNode(*interface_port_header_node);
+      }
+    }
+  }
+  return nullptr;
+}
+
+const SyntaxTreeLeaf *GetInterfaceModPortFromInterfaceHeaderNode(const Symbol &symbol) {
+  if (const auto *modport_symbol =
+          GetSubtreeAsSymbol(symbol, NodeEnum::kInterfacePortHeader, 2)) {
+    return &SymbolCastToLeaf(*modport_symbol);
+  }
+  return nullptr;
+}
+
 std::vector<verible::TreeSearchMatch> FindAllModulePortDeclarations(
     const verible::Symbol &root) {
   return SearchSyntaxTree(root, NodekModulePortDeclaration());
