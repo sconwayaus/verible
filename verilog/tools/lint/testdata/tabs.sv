@@ -1,2 +1,3 @@
-module	tabs; // tabs bad!
+module tabs;
+	int a; // tabs bad!
 endmodule
