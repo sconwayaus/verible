@@ -135,6 +135,11 @@ TEST(MixedIndentationRuleTest, AcceptsText) {
         "	initial $display(\"	\");		/*	*/ // some comment\n"
         "	initial $display(\"\");	//			Some comment\n"
         "endmodule\n"},
+
+        // no leading indentation
+        {"// Expects module port 'hello_world' to follow end with _i\n"
+        "module port_name_suffix(input bit hello_world);  // verilog_lint: waive port-name-style\n"
+        "endmodule\n"},
   };
   RunLintTestCases<VerilogAnalyzer, MixedIndentationRule>(kTestCases);
 }

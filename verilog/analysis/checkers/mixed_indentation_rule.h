@@ -35,10 +35,6 @@ class MixedIndentationRule : public verible::TextStructureLintRule {
 
   MixedIndentationRule() = default;
 
-  // void HandleLineSection(absl::string_view line,
-  //                        absl::string_view::size_type start_pos,
-  //                        absl::string_view::size_type end_pos);
-
   void Lint(const verible::TextStructureView &text_structure,
             absl::string_view filename) final;
 

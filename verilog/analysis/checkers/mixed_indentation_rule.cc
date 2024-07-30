@@ -204,7 +204,7 @@ void MixedIndentationRule::FindFileIndentation(const verible::TextStructureView 
     }
   }
 
-  indent_use_spaces = num_lines_starting_with_spaces > num_lines_starting_with_tabs;
+  indent_use_spaces = num_lines_starting_with_spaces >= num_lines_starting_with_tabs;
 
   // Determine the number of spaces to indent
   num_indent_spaces = 2;
