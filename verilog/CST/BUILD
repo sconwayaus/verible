@@ -272,6 +272,29 @@ cc_test(
 )
 
 cc_library(
+    name = "directive",
+    srcs = ["directive.cc"],
+    hdrs = ["directive.h"],
+    deps = [
+        ":verilog-matchers",
+        "//common/analysis:syntax-tree-search",
+        "//common/text:symbol",
+    ],
+)
+
+cc_test(
+    name = "directive_test",
+    srcs = ["directive_test.cc"],
+    deps = [
+        ":directive",
+        ":match-test-utils",
+        "//common/analysis:syntax-tree-search-test-utils",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "expression",
     srcs = ["expression.cc"],
     hdrs = ["expression.h"],
