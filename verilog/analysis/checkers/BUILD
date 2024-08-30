@@ -21,6 +21,7 @@ cc_library(
         ":case-missing-default-rule",
         ":constraint-name-style-rule",
         ":create-object-name-match-rule",
+        ":default-nettype-rule",
         ":disable-statement-rule",
         ":endif-comment-rule",
         ":enum-name-style-rule",
@@ -1518,6 +1519,38 @@ cc_test(
         ":constraint-name-style-rule",
         "//common/analysis:linter-test-utils",
         "//common/analysis:syntax-tree-linter-test-utils",
+        "//verilog/analysis:verilog-analyzer",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "default-nettype-rule",
+    srcs = ["default_nettype_rule.cc"],
+    hdrs = ["default_nettype_rule.h"],
+    deps = [
+        "//common/analysis:lint-rule-status",
+        "//common/analysis:token-stream-lint-rule",
+        "//common/strings:comment-utils",
+        "//common/text:token-info",
+        "//verilog/analysis:descriptions",
+        "//verilog/analysis:lint-rule-registry",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:string_view",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "default-nettype-rule_test",
+    srcs = ["default_nettype_rule_test.cc"],
+    deps = [
+        ":default-nettype-rule",
+        "//common/analysis:linter-test-utils",
+        "//common/analysis:token-stream-linter-test-utils",
         "//verilog/analysis:verilog-analyzer",
         "//verilog/parser:verilog-token-enum",
         "@com_google_googletest//:gtest",
