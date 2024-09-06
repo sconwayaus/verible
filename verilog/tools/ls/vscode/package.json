@@ -30,24 +30,52 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "verible",
+      "title": "Verible",
       "properties": {
-        "verible.path": {
+        "verible.languageServer.path": {
           "type": "string",
           "default": "verible-verilog-ls",
           "scope": "machine-overridable",
-          "description": "The path to verible-verilog-ls executable, e.g.: /usr/bin/verible-verilog-ls."
+          "description": "The path to verible-verilog-ls executable, e.g.: /usr/bin/verible-verilog-ls.",
+          "order": 0
         },
-        "verible.arguments": {
+        "verible.languageServer.arguments": {
           "type": "array",
           "default": [],
           "items": {
             "type": "string"
           },
-          "description": "Arguments for verible-verilog-ls server."
+          "description": "Arguments for verible-verilog-ls server.",
+          "order": 1
+        },
+        "verible.projectFileList.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto generation of verible.filelist for project-wide symbol discovery.",
+          "order": 2
+        },
+        "verible.projectFileList.includeGlobPattern": {
+          "type": "string",
+          "default": "{**/*.sv,**/*.svh,**/*.v}",
+          "scope": "machine-overridable",
+          "description": "Include file glob pattern for creating a project file list (verible.filelist).",
+          "order": 3
+        },
+        "verible.projectFileList.excludeGlobPattern": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "description": "Exclude file glob pattern for creating a project file list (verible.filelist).",
+          "order": 4
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "verible.create_project_file_list",
+        "title": "Verible: Create Project File List (verible.filelist)"
+      }
+    ]
   },
   "activationEvents": [
     "onLanguage:systemverilog",
@@ -72,12 +100,12 @@
     "vsix": "vsce package -o verible.vsix"
   },
   "devDependencies": {
+    "@types/decompress": "^4.2.4",
+    "@types/follow-redirects": "^1.14.1",
     "@types/glob": "^7.1.4",
     "@types/mocha": "^9.0.0",
     "@types/node": "14.x",
     "@types/vscode": "^1.61.0",
-    "@types/decompress": "^4.2.4",
-    "@types/follow-redirects": "^1.14.1",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "@vscode/test-electron": "^1.6.2",
@@ -86,7 +114,7 @@
     "mocha": "^9.1.1",
     "ts-loader": "^9.2.5",
     "typescript": "^4.4.3",
-    "vsce": "^1.100.1",
+    "@vscode/vsce": "^2.15.0",
     "webpack": "^5.52.1",
     "webpack-cli": "^4.10.0"
   },
