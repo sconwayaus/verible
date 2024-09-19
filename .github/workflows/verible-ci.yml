@@ -493,7 +493,7 @@ jobs:
 
     - name: Prepare release
       run: |
-        $VERSION = "v0.2.6_my_master"
+        $VERSION = "v0.2.5_my_master"
         C:/ProgramData/chocolatey/lib/bazel/bazel.exe run -c opt :install -- "c:/verible-${VERSION}-win64"
         7z a "verible-${VERSION}-win64.zip" "c:/verible-${VERSION}-win64"
 
@@ -535,7 +535,7 @@ jobs:
         git config --local user.email "$BOT_EMAIL"
 
         # Create a tag of form v0.0-183-gdf2b162-20191112132344
-        TAG="v0.2.6_my_master"
+        TAG="v0.2.5_my_master"
 
         git tag "$TAG" || true
         echo "TAG=$TAG" >> $GITHUB_ENV
