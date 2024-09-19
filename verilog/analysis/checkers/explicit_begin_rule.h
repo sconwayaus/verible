@@ -39,8 +39,6 @@ class ExplicitBeginRule : public verible::TokenStreamLintRule {
 
   absl::Status Configure(absl::string_view configuration) final;
 
-  ExplicitBeginRule() : state_(State::kNormal), condition_expr_level_(0) {}
-
   void HandleToken(const verible::TokenInfo &token) final;
 
   verible::LintRuleStatus Report() const final;
