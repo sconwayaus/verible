@@ -316,6 +316,10 @@ inline constexpr auto AlwaysStatementHasParentheses =
     verible::matcher::MakePathMatcher(N(kProceduralTimingControlStatement),
                                       N(kEventControl), N(kParenGroup));
 
+inline constexpr auto AlwaysBlockStatement =
+    verible::matcher::MakePathMatcher(N(kProceduralTimingControlStatement),
+                                      N(kEventControl));
+
 // Matches occurrence of the 'always' keyword.
 // This is needed to distinguish between various kAlwaysStatement's.
 // This matches 'always', but not 'always_ff', nor 'always_comb'.

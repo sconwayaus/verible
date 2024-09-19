@@ -14,6 +14,7 @@ package(
 cc_library(
     name = "verilog-lint-rules",
     deps = [
+        ":always-block-rule",
         ":always-comb-blocking-rule",
         ":always-comb-rule",
         ":always-ff-non-blocking-rule",
@@ -1056,6 +1057,43 @@ cc_test(
     srcs = ["create_object_name_match_rule_test.cc"],
     deps = [
         ":create-object-name-match-rule",
+        "//common/analysis:linter-test-utils",
+        "//common/analysis:syntax-tree-linter-test-utils",
+        "//verilog/analysis:verilog-analyzer",
+        "//verilog/parser:verilog-token-enum",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "always-block-rule",
+    srcs = ["always_block_rule.cc"],
+    hdrs = ["always_block_rule.h"],
+    deps = [
+        "//common/analysis:lint-rule-status",
+        "//common/analysis:syntax-tree-lint-rule",
+        "//common/analysis/matcher",
+        "//common/analysis/matcher:bound-symbol-manager",
+        "//common/text:concrete-syntax-leaf",
+        "//common/text:concrete-syntax-tree",
+        "//common/text:symbol",
+        "//common/text:syntax-tree-context",
+        "//common/text:tree-utils",
+        "//verilog/CST:statement",
+        "//verilog/CST:verilog-matchers",
+        "//verilog/analysis:descriptions",
+        "//verilog/analysis:lint-rule-registry",
+        "@com_google_absl//absl/strings:string_view",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "always-block-rule_test",
+    srcs = ["always_block_rule_test.cc"],
+    deps = [
+        ":always-block-rule",
         "//common/analysis:linter-test-utils",
         "//common/analysis:syntax-tree-linter-test-utils",
         "//verilog/analysis:verilog-analyzer",
