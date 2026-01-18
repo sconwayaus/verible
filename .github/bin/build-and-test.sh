@@ -23,10 +23,8 @@ if [[ "${MODE}" == *-clang ]]; then
   export CXX=clang++
   export CC=clang
 
-  # clang versions supported. Starting with 13, we
-  # get some warnings in absl, so let's not go beyond
-  # 12 for now.
-  for version in 12 11 10 ; do
+  # clang versions that we have tested.
+  for version in 19 12 11 10 ; do
     if command -v clang++-${version}; then
       export CXX=clang++-${version}
       export CC=clang-${version}
@@ -118,18 +116,18 @@ case "$MODE" in
     ;;
 
   compile|compile-clang|clean)
-    bazel build --keep_going ${BAZEL_OPTS} :install-binaries
+    bazel build -c opt --keep_going ${BAZEL_OPTS} :install-binaries
     ;;
 
   compile-static|compile-static-clang)
-    bazel build --keep_going --config=create_static_linked_executables ${BAZEL_OPTS} :install-binaries
+    bazel build -c opt --keep_going --config=create_static_linked_executables ${BAZEL_OPTS} :install-binaries
     ;;
 
   test-c++20|test-c++20-clang)
     # Compile with C++ 20 to make sure to be compatible with the next version.
     if [[ ${MODE} == "test-c++20" ]]; then
-       # Assignment of 1-char strings: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
-       BAZEL_OPTS="${BAZEL_OPTS} --cxxopt=-Wno-restrict"
+      # Assignment of 1-char strings: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+      BAZEL_OPTS="${BAZEL_OPTS} --cxxopt=-Wno-restrict --cxxopt=-Wno-missing-requires"
     fi
     bazel test --keep_going --test_output=errors ${BAZEL_OPTS} --cxxopt=-std=c++20 -- ${CHOSEN_TARGETS}
     ;;
@@ -137,8 +135,8 @@ case "$MODE" in
   test-c++23|test-c++23-clang)
     # Same; c++23
     if [[ ${MODE} == "test-c++23" ]]; then
-       # Assignment of 1-char strings: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
-       BAZEL_OPTS="${BAZEL_OPTS} --cxxopt=-Wno-restrict"
+      # Assignment of 1-char strings: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105329
+      BAZEL_OPTS="${BAZEL_OPTS} --cxxopt=-Wno-restrict --cxxopt=-Wno-missing-requires"
     fi
     bazel test --keep_going --test_output=errors ${BAZEL_OPTS} --cxxopt=-std=c++2b -- ${CHOSEN_TARGETS}
     ;;

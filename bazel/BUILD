@@ -3,7 +3,7 @@ Rules for adding './configure && make' style dependencies.
 """
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("@com_github_google_rules_install//installer:def.bzl", "installer")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(
     default_applicable_licenses = ["//:license"],
@@ -45,14 +45,4 @@ bool_flag(
 config_setting(
     name = "static_linked_executables",
     flag_values = {":create_static_linked_executables": "true"},
-)
-
-# This installer is here, so that the toplevel BUILD file does not have
-# to pull in the full rules_install to keep that light of dependencies.
-installer(
-    name = "install",
-    data = [
-        "//:install-binaries",
-        "//:install-scripts",
-    ],
 )
