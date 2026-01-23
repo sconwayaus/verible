@@ -39,14 +39,12 @@ class PackageFilenameRule : public verible::TextStructureLintRule {
 
   static const LintRuleDescriptor &GetDescriptor();
 
-  PackageFilenameRule() = default;
+  PackageFilenameRule();
 
   absl::Status Configure(std::string_view configuration) final;
   void Lint(const verible::TextStructureView &, std::string_view) final;
 
   verible::LintRuleStatus Report() const final;
-
-  absl::Status Configure(std::string_view configuration) final;
 
  private:
   // Ok to treat dashes as underscores.

@@ -43,7 +43,7 @@ using verible::LintRuleStatus;
 using verible::TextStructureView;
 
 #define STYLE_DEFAULT_REGEX "[a-z_0-9]+"
-static constexpr absl::string_view style_default_regex = STYLE_DEFAULT_REGEX;
+static constexpr std::string_view style_default_regex = STYLE_DEFAULT_REGEX;
 
 PackageFilenameRule::PackageFilenameRule() {
   style_regex_ =
@@ -134,7 +134,7 @@ void PackageFilenameRule::Lint(const TextStructureView &text_structure,
     const verible::TokenInfo *package_name_token =
         GetPackageNameToken(*package_match.match);
     if (!package_name_token) continue;
-    absl::string_view package_id = package_name_token->text();
+    std::string_view package_id = package_name_token->text();
     auto package_id_plus_suffix =
         absl::StrCat(package_id, optional_filename_suffix);
     if ((package_id != unitname) && (package_id_plus_suffix != unitname)) {
@@ -152,7 +152,7 @@ void PackageFilenameRule::Lint(const TextStructureView &text_structure,
   }
 }
 
-absl::Status PackageFilenameRule::Configure(absl::string_view configuration) {
+absl::Status PackageFilenameRule::Configure(std::string_view configuration) {
   using verible::config::SetBool;
   using verible::config::SetRegex;
   using verible::config::SetString;
