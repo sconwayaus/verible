@@ -16,6 +16,7 @@ package(
 cc_library(
     name = "verilog-lint-rules",
     deps = [
+        ":always-block-rule",
         ":always-comb-blocking-rule",
         ":always-comb-rule",
         ":always-ff-non-blocking-rule",
@@ -1031,6 +1032,42 @@ cc_test(
     srcs = ["create-object-name-match-rule_test.cc"],
     deps = [
         ":create-object-name-match-rule",
+        "//verible/common/analysis:linter-test-utils",
+        "//verible/common/analysis:syntax-tree-linter-test-utils",
+        "//verible/verilog/analysis:verilog-analyzer",
+        "//verible/verilog/parser:verilog-token-enum",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "always-block-rule",
+    srcs = ["always-block-rule.cc"],
+    hdrs = ["always-block-rule.h"],
+    deps = [
+        "//verible/common/analysis:lint-rule-status",
+        "//verible/common/analysis:syntax-tree-lint-rule",
+        "//verible/common/analysis/matcher",
+        "//verible/common/analysis/matcher:bound-symbol-manager",
+        "//verible/common/text:concrete-syntax-leaf",
+        "//verible/common/text:concrete-syntax-tree",
+        "//verible/common/text:symbol",
+        "//verible/common/text:syntax-tree-context",
+        "//verible/common/text:tree-utils",
+        "//verible/verilog/CST:statement",
+        "//verible/verilog/CST:verilog-matchers",
+        "//verible/verilog/analysis:descriptions",
+        "//verible/verilog/analysis:lint-rule-registry",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "always-block-rule_test",
+    srcs = ["always-block-rule_test.cc"],
+    deps = [
+        ":always-block-rule",
         "//verible/common/analysis:linter-test-utils",
         "//verible/common/analysis:syntax-tree-linter-test-utils",
         "//verible/verilog/analysis:verilog-analyzer",

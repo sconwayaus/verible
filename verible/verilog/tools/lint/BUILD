@@ -52,6 +52,7 @@ cc_binary(
 _linter_test_configs = [
     # (rule-name, testdata/FILE.sv, default-enabled?)
     # See verilog/analysis/default_rules.h for default-enabled rules.
+    ("always-block", "always_block", False),
     ("always-comb", "always_comb_module", True),
     ("suggest-parentheses", "suggest_parentheses_example", True),
     ("always-comb-blocking", "always_comb_blocking", True),
