@@ -1381,6 +1381,7 @@ cc_library(
         "//verible/common/analysis:syntax-tree-lint-rule",
         "//verible/common/analysis/matcher",
         "//verible/common/analysis/matcher:bound-symbol-manager",
+        "//verible/common/text:config-utils",
         "//verible/common/text:symbol",
         "//verible/common/text:syntax-tree-context",
         "//verible/common/text:token-info",

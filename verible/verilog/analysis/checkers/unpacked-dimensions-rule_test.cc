@@ -16,6 +16,8 @@
 
 #include <initializer_list>
 
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "verible/common/analysis/linter-test-utils.h"
 #include "verible/common/analysis/syntax-tree-linter-test-utils.h"
@@ -26,7 +28,6 @@ namespace verilog {
 namespace analysis {
 namespace {
 
-using testing::HasSubstr;
 using verible::LintTestCase;
 using verible::RunConfiguredLintTestCases;
 using verible::RunLintTestCases;

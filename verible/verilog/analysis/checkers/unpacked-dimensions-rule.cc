@@ -15,11 +15,14 @@
 #include "verible/verilog/analysis/checkers/unpacked-dimensions-rule.h"
 
 #include <set>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "verible/common/analysis/lint-rule-status.h"
 #include "verible/common/analysis/matcher/bound-symbol-manager.h"
 #include "verible/common/analysis/matcher/matcher.h"
+#include "verible/common/text/config-utils.h"
 #include "verible/common/text/symbol.h"
 #include "verible/common/text/syntax-tree-context.h"
 #include "verible/common/text/token-info.h"
@@ -46,14 +49,10 @@ VERILOG_REGISTER_LINT_RULE(UnpackedDimensionsRule);
 static constexpr std::string_view kMessageScalarInOrder =
     "When an unpacked dimension range is zero-based ([0:N-1]), "
     "declare size as [N] instead.";
-static constexpr std::string_view kMessageScalarReversed =
-    "Unpacked dimension range must be declared in big-endian ([0:N-1]) order.  "
-    "Declare zero-based big-endian unpacked dimensions sized as [N].";
-static constexpr std::string_view kMessageReorder =
+static constexpr std::string_view kMessageReorderBigEndian =
     "Declare unpacked dimension range in big-endian (increasing) order, "
     "e.g. [N:N+M].";
-
-static constexpr absl::string_view kMessageReorderLittleEndian =
+static constexpr std::string_view kMessageReorderLittleEndian =
     "Declare unpacked dimension range in little-endian (decreasing) order, "
     "e.g. [N+M:N].";
 
@@ -151,9 +150,9 @@ LintRuleStatus UnpackedDimensionsRule::Report() const {
 }
 
 absl::Status UnpackedDimensionsRule::Configure(
-    const absl::string_view configuration) {
-  static const std::vector<absl::string_view> allowed = {"big-endian",
-                                                         "little-endian"};
+    const std::string_view configuration) {
+  static const std::vector<std::string_view> allowed = {"big-endian",
+                                                        "little-endian"};
   std::string range_order_str = "big-endian";
   using verible::config::SetBool;
   using verible::config::SetStringOneOf;

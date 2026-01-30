@@ -16,7 +16,9 @@
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_UNPACKED_DIMENSIONS_RULE_H_
 
 #include <set>
+#include <string_view>
 
+#include "absl/status/status.h"
 #include "verible/common/analysis/lint-rule-status.h"
 #include "verible/common/analysis/syntax-tree-lint-rule.h"
 #include "verible/common/text/symbol.h"
@@ -38,7 +40,7 @@ class UnpackedDimensionsRule : public verible::SyntaxTreeLintRule {
   void HandleSymbol(const verible::Symbol &symbol,
                     const verible::SyntaxTreeContext &context) final;
   verible::LintRuleStatus Report() const final;
-  absl::Status Configure(const absl::string_view configuration);
+  absl::Status Configure(std::string_view configuration) final;
 
  private:
   std::set<verible::LintViolation> violations_;
