@@ -1,0 +1,130 @@
+// Copyright 2017-2020 The Verible Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "verible/verilog/analysis/checkers/struct-union-name-style-rule.h"
+
+#include <memory>
+#include <set>
+#include <string>
+#include <string_view>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "re2/re2.h"
+#include "verible/common/analysis/lint-rule-status.h"
+#include "verible/common/analysis/matcher/bound-symbol-manager.h"
+#include "verible/common/analysis/matcher/matcher.h"
+#include "verible/common/text/config-utils.h"
+#include "verible/common/text/symbol.h"
+#include "verible/common/text/syntax-tree-context.h"
+#include "verible/common/util/logging.h"
+#include "verible/verilog/CST/type.h"
+#include "verible/verilog/CST/verilog-matchers.h"
+#include "verible/verilog/analysis/descriptions.h"
+#include "verible/verilog/analysis/lint-rule-registry.h"
+
+namespace verilog {
+namespace analysis {
+
+VERILOG_REGISTER_LINT_RULE(StructUnionNameStyleRule);
+
+using verible::LintRuleStatus;
+using verible::LintViolation;
+using verible::SyntaxTreeContext;
+using verible::matcher::Matcher;
+
+#define STYLE_DEFAULT_REGEX "[a-z_0-9]+(_t)"
+static std::string style_default_regex = STYLE_DEFAULT_REGEX;
+
+StructUnionNameStyleRule::StructUnionNameStyleRule() {
+  style_regex_ =
+      std::make_unique<re2::RE2>(style_default_regex, re2::RE2::Quiet);
+
+  kMessage =
+      absl::StrCat("Struct/union name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
+}
+
+const LintRuleDescriptor &StructUnionNameStyleRule::GetDescriptor() {
+  static const LintRuleDescriptor d{
+      .name = "struct-union-name-style",
+      .topic = "struct-union-conventions",
+      .desc =
+          "Checks that struct and union names conform to a naming convention "
+          "defined by a RE2 regular expression.\n"
+          "Example common regex patterns:\n"
+          "  lower_snake_case: \"[a-z_0-9]+\"\n"
+          "  UPPER_SNAKE_CASE: \"[A-Z_0-9]+\"\n"
+          "  Title_Snake_Case: \"[A-Z]+[a-z0-9]*(_[A-Z0-9]+[a-z0-9]*)*\"\n"
+          "  Sentence_snake_case: \"([A-Z0-9]+[a-z0-9]*_?)([a-z0-9]*_*)*\"\n"
+          "  camelCase: \"([a-z0-9]+[A-Z0-9]*)+\"\n"
+          "  PascalCaseRegexPattern: \"([A-Z0-9]+[a-z0-9]*)+\"\n"
+          "  lower_snake_case with exceptions (B|GiB|KG|Kg): "
+          "[^_]([a-z0-9]*_|[0-9]+(B|GiB|KJ|Kg)_)+t\n"
+          "RE2 regular expression syntax documentation can be found at "
+          "https://github.com/google/re2/wiki/syntax\n",
+      .param = {{"style_regex", STYLE_DEFAULT_REGEX,
+                 "A regex used to check struct and union name style."}},
+  };
+  return d;
+}
+
+static const Matcher &TypedefMatcher() {
+  static const Matcher matcher(NodekTypeDeclaration());
+  return matcher;
+}
+
+void StructUnionNameStyleRule::HandleSymbol(const verible::Symbol &symbol,
+                                            const SyntaxTreeContext &context) {
+  verible::matcher::BoundSymbolManager manager;
+  if (TypedefMatcher().Matches(symbol, &manager)) {
+    // TODO: This can be changed to checking type of child (by index) when
+    // we have consistent shape for all kTypeDeclaration nodes.
+    if (FindAllStructTypes(symbol).empty() &&
+        FindAllUnionTypes(symbol).empty()) {
+      return;
+    }
+
+    const verible::SyntaxTreeLeaf *identifier_leaf =
+        GetIdentifierFromTypeDeclaration(symbol);
+    const std::string_view name =
+        ABSL_DIE_IF_NULL(identifier_leaf)->get().text();
+
+    if (!RE2::FullMatch(name, *style_regex_)) {
+      violations_.insert(
+          LintViolation(identifier_leaf->get(), kMessage, context));
+    }
+  }
+}
+
+absl::Status StructUnionNameStyleRule::Configure(
+    std::string_view configuration) {
+  using verible::config::SetRegex;
+  absl::Status s = verible::ParseNameValues(
+      configuration, {{"style_regex", SetRegex(&style_regex_)}});
+  if (!s.ok()) return s;
+
+  kMessage =
+      absl::StrCat("Struct/union name does not match the naming convention ",
+                   "defined by regex pattern: ", style_regex_->pattern());
+
+  return absl::OkStatus();
+}
+
+LintRuleStatus StructUnionNameStyleRule::Report() const {
+  return LintRuleStatus(violations_, GetDescriptor());
+}
+
+}  // namespace analysis
+}  // namespace verilog
