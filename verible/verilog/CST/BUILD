@@ -649,6 +649,7 @@ cc_library(
     srcs = ["port.cc"],
     hdrs = ["port.h"],
     deps = [
+        ":declaration",
         ":identifier",
         ":verilog-matchers",  # fixdeps: keep
         ":verilog-nonterminals",

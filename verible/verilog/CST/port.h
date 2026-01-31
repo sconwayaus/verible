@@ -58,14 +58,11 @@ const verible::SyntaxTreeNode *GetDataTypeNodeFromPortDeclaration(
 // Can retutn nullptr is the signal type is not specified
 // Example signal_type: wire, var
 const verible::SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(
-  const verible::Symbol &symbol);
+    const verible::Symbol &symbol);
 
 // Extracts the data type from a port declaration.
 // Can retutn nullptr is the signal type is not specified
 // Example data_type: logic, reg
-const verible::SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
-    const verible::Symbol &symbol);
-
 const verible::SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
     const verible::Symbol &symbol);
 

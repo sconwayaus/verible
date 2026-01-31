@@ -15,15 +15,14 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_SUFFIX_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_SUFFIX_RULE_H_
 
-#include <map>
 #include <set>
+#include <string_view>
 
-#include "absl/strings/string_view.h"
-#include "verible/common/analysis/lint_rule_status.h"
-#include "verible/common/analysis/syntax_tree_lint_rule.h"
+#include "absl/status/status.h"
+#include "verible/common/analysis/lint-rule-status.h"
+#include "verible/common/analysis/syntax-tree-lint-rule.h"
 #include "verible/common/text/symbol.h"
-#include "verible/common/text/syntax_tree_context.h"
-#include "verible/common/text/token_info.h"
+#include "verible/common/text/syntax-tree-context.h"
 #include "verible/verilog/analysis/descriptions.h"
 
 namespace verilog {
@@ -38,7 +37,7 @@ class ForbidPortTypeRule : public verible::SyntaxTreeLintRule {
 
   static const LintRuleDescriptor &GetDescriptor();
 
-  absl::Status Configure(absl::string_view configuration) final;
+  absl::Status Configure(std::string_view configuration) final;
 
   void HandleSymbol(const verible::Symbol &symbol,
                     const verible::SyntaxTreeContext &context) final;
@@ -47,13 +46,13 @@ class ForbidPortTypeRule : public verible::SyntaxTreeLintRule {
 
  private:
   // // Helper functions
-  // bool IsSuffixOk(const absl::string_view &name,
-  //                 const std::set<absl::string_view> &suffix_list);
-  // void Violation(absl::string_view direction, const verible::TokenInfo
+  // bool IsSuffixOk(const std::string_view &name,
+  //                 const std::set<std::string_view> &suffix_list);
+  // void Violation(std::string_view direction, const verible::TokenInfo
   // &token,
   //                const verible::SyntaxTreeContext &context);
-  // void ParseViloationString(const absl::string_view direction,
-  //                           std::set<absl::string_view> suffix_list,
+  // void ParseViloationString(const std::string_view direction,
+  //                           std::set<std::string_view> suffix_list,
   //                           std::string *msg) const;
 
   // Violations

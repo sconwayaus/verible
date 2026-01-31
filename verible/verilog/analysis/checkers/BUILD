@@ -1452,8 +1452,8 @@ cc_test(
 
 cc_library(
     name = "forbid-port-type-rule",
-    srcs = ["forbid_port_type_rule.cc"],
-    hdrs = ["forbid_port_type_rule.h"],
+    srcs = ["forbid-port-type-rule.cc"],
+    hdrs = ["forbid-port-type-rule.h"],
     deps = [
         "//verible/common/analysis:lint-rule-status",
         "//verible/common/analysis:syntax-tree-lint-rule",
@@ -1464,27 +1464,27 @@ cc_library(
         "//verible/common/text:syntax-tree-context",
         "//verible/common/text:token-info",
         "//verible/common/util:logging",
+        "//verible/verilog/CST:declaration",
         "//verible/verilog/CST:port",
         "//verible/verilog/CST:verilog-matchers",
         "//verible/verilog/analysis:descriptions",
         "//verible/verilog/analysis:lint-rule-registry",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:string_view",
+        "@abseil-cpp//absl/strings",
     ],
     alwayslink = 1,
 )
 
 cc_test(
     name = "forbid-port-type-rule_test",
-    srcs = ["forbid_port_type_rule_test.cc"],
+    srcs = ["forbid-port-type-rule_test.cc"],
     deps = [
         ":forbid-port-type-rule",
         "//verible/common/analysis:linter-test-utils",
         "//verible/common/analysis:syntax-tree-linter-test-utils",
         "//verible/verilog/analysis:verilog-analyzer",
         "//verible/verilog/parser:verilog-token-enum",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

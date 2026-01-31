@@ -85,8 +85,7 @@ const verible::SyntaxTreeNode *GetDataTypePrimitiveNodeFromDataType(
   return nullptr;
 }
 
-const SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(
-  const Symbol &symbol) {
+const SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(const Symbol &symbol) {
   if (const auto *data_type_primitive_node =
           GetSubtreeAsLeaf(symbol, NodeEnum::kPortDeclaration, 1)) {
     return &SymbolCastToLeaf(*data_type_primitive_node);
@@ -97,16 +96,14 @@ const SyntaxTreeLeaf *GetSignalTypeFromPortDeclaration(
 
 const SyntaxTreeLeaf *GetDataTypePrimitiveFromPortDeclaration(
     const Symbol &symbol) {
-
   if (const verible::SyntaxTreeNode *data_type_node =
           GetDataTypeNodeFromPortDeclaration(symbol)) {
     if (const verible::SyntaxTreeNode *data_type_primitive_node =
             GetDataTypePrimitiveNodeFromDataType(*data_type_node)) {
-
-      if(data_type_primitive_node->MatchesTag(NodeEnum::kLocalRoot)) {
+      if (data_type_primitive_node->MatchesTag(NodeEnum::kLocalRoot)) {
         return nullptr;
       }
-      
+
       if (const auto *dir_symbol = GetSubtreeAsSymbol(
               *data_type_primitive_node, NodeEnum::kDataTypePrimitive, 0)) {
         return &SymbolCastToLeaf(*dir_symbol);

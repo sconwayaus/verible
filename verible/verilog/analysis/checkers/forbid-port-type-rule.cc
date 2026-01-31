@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "verible/verilog/analysis/checkers/forbid_port_type_rule.h"
+#include "verible/verilog/analysis/checkers/forbid-port-type-rule.h"
 
-#include <map>
 #include <set>
-#include <string>
-#include <vector>
+#include <string_view>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "verible/common/analysis/lint_rule_status.h"
-#include "verible/common/analysis/matcher/bound_symbol_manager.h"
+#include "absl/status/status.h"
+#include "verible/common/analysis/lint-rule-status.h"
+#include "verible/common/analysis/matcher/bound-symbol-manager.h"
 #include "verible/common/analysis/matcher/matcher.h"
-#include "verible/common/text/config_utils.h"
+#include "verible/common/analysis/syntax-tree-lint-rule.h"
 #include "verible/common/text/symbol.h"
-#include "verible/common/text/syntax_tree_context.h"
-#include "verible/common/text/token_info.h"
+#include "verible/common/text/syntax-tree-context.h"
+#include "verible/common/text/token-info.h"
 #include "verible/common/util/logging.h"
 #include "verible/verilog/CST/port.h"
-#include "verible/verilog/CST/verilog_matchers.h"
+#include "verible/verilog/CST/verilog-matchers.h"
 #include "verible/verilog/analysis/descriptions.h"
-#include "verible/verilog/analysis/lint_rule_registry.h"
+#include "verible/verilog/analysis/lint-rule-registry.h"
 
 namespace verilog {
 namespace analysis {
@@ -42,7 +38,6 @@ using verible::LintRuleStatus;
 using verible::LintViolation;
 using verible::Symbol;
 using verible::SyntaxTreeContext;
-using verible::TokenInfo;
 using verible::matcher::Matcher;
 
 // Register ForbidPortTypeRule.
@@ -76,7 +71,7 @@ ForbidPortTypeRule::ForbidPortTypeRule() : verible::SyntaxTreeLintRule() {
   // Do nothing
 }
 
-// void ForbidPortTypeRule::Violation(absl::string_view direction,
+// void ForbidPortTypeRule::Violation(std::string_view direction,
 //                                    const TokenInfo &token,
 //                                    const SyntaxTreeContext &context) {
 //   if (direction == "input") {
@@ -98,14 +93,14 @@ void ForbidPortTypeRule::HandleSymbol(const Symbol &symbol,
   if (PortMatcher().Matches(symbol, &manager)) {
     const auto *direction_leaf = GetDirectionFromPortDeclaration(symbol);
 
-    absl::string_view suffix_type;
+    std::string_view suffix_type;
 
-    std::set<absl::string_view> suffix_list;
+    std::set<std::string_view> suffix_list;
     if (!direction_leaf) {
       return;
     }
 
-    absl::string_view direction = direction_leaf->get().text();
+    std::string_view direction = direction_leaf->get().text();
 
     // Net port, wire and var
     const auto *signal_type = GetSignalTypeFromPortDeclaration(symbol);
@@ -116,30 +111,37 @@ void ForbidPortTypeRule::HandleSymbol(const Symbol &symbol,
     }
 
     const auto *token = signal_type ? signal_type : data_type;
-    const absl::string_view type = token->get().text();
+    const std::string_view type = token->get().text();
 
-    if(direction == "input") {
-      if(type == "logic") {
-        violations_.insert(LintViolation(*token, "'input logic' invalid. Use 'input wire' instead.", context));
-      } else if(type == "var") {
-        violations_.insert(LintViolation(*token, "'input var' invalid. Use 'input wire' instead.", context));
-      } else if(type == "reg") {
-        violations_.insert(LintViolation(*token, "'input reg' invalid. Use 'input wire' instead.", context));
+    if (direction == "input") {
+      if (type == "logic") {
+        violations_.insert(LintViolation(
+            *token, "'input logic' invalid. Use 'input wire' instead.",
+            context));
+      } else if (type == "var") {
+        violations_.insert(LintViolation(
+            *token, "'input var' invalid. Use 'input wire' instead.", context));
+      } else if (type == "reg") {
+        violations_.insert(LintViolation(
+            *token, "'input reg' invalid. Use 'input wire' instead.", context));
       }
-    }
-    else if(direction == "inout") {
-      if(type == "logic") {
-        violations_.insert(LintViolation(*token, "'inout logic' invalid. Use 'inout wire' instead.", context));
-      } else if(type == "var") {
-        violations_.insert(LintViolation(*token, "'inout var' invalid. Use 'inout wire' instead.", context));
-      } else if(type == "reg") {
-        violations_.insert(LintViolation(*token, "'inout reg' invalid. Use 'inout wire' instead.", context));
+    } else if (direction == "inout") {
+      if (type == "logic") {
+        violations_.insert(LintViolation(
+            *token, "'inout logic' invalid. Use 'inout wire' instead.",
+            context));
+      } else if (type == "var") {
+        violations_.insert(LintViolation(
+            *token, "'inout var' invalid. Use 'inout wire' instead.", context));
+      } else if (type == "reg") {
+        violations_.insert(LintViolation(
+            *token, "'inout reg' invalid. Use 'inout wire' instead.", context));
       }
     }
   }
 }
 
-absl::Status ForbidPortTypeRule::Configure(absl::string_view configuration) {
+absl::Status ForbidPortTypeRule::Configure(std::string_view configuration) {
   // using verible::config::SetBool;
   // using verible::config::SetStringSetOr;
 
