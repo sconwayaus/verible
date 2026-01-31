@@ -15,8 +15,7 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_STYLE_RULE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_PORT_NAME_STYLE_RULE_H_
 
-#include <memory.h>
-
+#include <memory>
 #include <set>
 #include <string>
 #include <string_view>

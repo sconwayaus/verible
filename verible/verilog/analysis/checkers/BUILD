@@ -1811,8 +1811,8 @@ cc_test(
 
 cc_library(
     name = "port-name-style-rule",
-    srcs = ["port_name_style_rule.cc"],
-    hdrs = ["port_name_style_rule.h"],
+    srcs = ["port-name-style-rule.cc"],
+    hdrs = ["port-name-style-rule.h"],
     deps = [
         "//verible/common/analysis:lint-rule-status",
         "//verible/common/analysis:syntax-tree-lint-rule",
@@ -1834,7 +1834,7 @@ cc_library(
 
 cc_test(
     name = "port-name-style-rule_test",
-    srcs = ["port_name_style_rule_test.cc"],
+    srcs = ["port-name-style-rule_test.cc"],
     deps = [
         ":port-name-style-rule",
         "//verible/common/analysis:linter-test-utils",

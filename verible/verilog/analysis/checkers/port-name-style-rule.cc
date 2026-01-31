@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "verible/verilog/analysis/checkers/port_name_style_rule.h"
+#include "verible/verilog/analysis/checkers/port-name-style-rule.h"
 
 #include <memory>
 #include <set>
