@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module forbid_line_continuations;
 
 string bad_literal = "Humpty Dumpty sat on a wall. \

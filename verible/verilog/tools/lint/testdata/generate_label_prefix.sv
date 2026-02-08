@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module generate_label_prefix;
   // verilog_lint: waive legacy-genvar-declaration
   genvar i;

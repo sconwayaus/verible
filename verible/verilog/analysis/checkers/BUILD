@@ -1549,7 +1549,6 @@ cc_test(
         "//verible/common/analysis:linter-test-utils",
         "//verible/common/analysis:token-stream-linter-test-utils",
         "//verible/verilog/analysis:verilog-analyzer",
-        "//verible/verilog/parser:verilog-token-enum",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

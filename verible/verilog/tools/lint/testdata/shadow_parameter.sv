@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 class jumbo_packet; // the shadowed instance
     const int max_size = 9 * 1024;
     byte payload [];

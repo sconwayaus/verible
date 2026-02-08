@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module disable_statement;
   initial begin
     fork : foo

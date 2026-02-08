@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module object_creation_name;
   initial begin
     // This is good

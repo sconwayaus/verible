@@ -15,10 +15,12 @@
 #ifndef VERIBLE_VERILOG_ANALYSIS_CHECKERS_DEFAULT_NETTYPE_H_
 #define VERIBLE_VERILOG_ANALYSIS_CHECKERS_DEFAULT_NETTYPE_H_
 
-#include "common/analysis/lint_rule_status.h"
-#include "common/analysis/token_stream_lint_rule.h"
-#include "common/text/token_info.h"
-#include "verilog/analysis/descriptions.h"
+#include <set>
+
+#include "verible/common/analysis/lint-rule-status.h"
+#include "verible/common/analysis/token-stream-lint-rule.h"
+#include "verible/common/text/token-info.h"
+#include "verible/verilog/analysis/descriptions.h"
 
 namespace verilog {
 namespace analysis {
@@ -38,13 +40,14 @@ class DefaultNetTypeRule : public verible::TokenStreamLintRule {
 
  private:
   // States of the internal token-based analysis.
-  enum class State { kStart, kSearch, kNetType, kComplete };
+  enum class State { kStart, kSearch, kSearchDefaultNettypeValue, kComplete };
 
   // Internal lexical analysis state.
   State state_ = State::kStart;
 
   const verible::TokenInfo *first_token_ = nullptr;
-  bool found_default_nettype_none_ = false;
+  const verible::TokenInfo *default_nettype_token_ = nullptr;
+  bool found_default_nettype_ = false;
 
   // Collection of found violations.
   std::set<verible::LintViolation> violations_;

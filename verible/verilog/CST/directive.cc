@@ -16,9 +16,9 @@
 
 #include <vector>
 
-#include "verible/common/analysis/syntax_tree_search.h"
+#include "verible/common/analysis/syntax-tree-search.h"
 #include "verible/common/text/symbol.h"
-#include "verible/verilog/CST/verilog_matchers.h"
+#include "verible/verilog/CST/verilog-matchers.h"
 
 namespace verilog {
 using verible::Symbol;

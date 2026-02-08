@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module mismatched_labels(
   input clk_i
 );

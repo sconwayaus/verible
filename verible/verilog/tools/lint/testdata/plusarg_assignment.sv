@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 class foo;
   function bar;
     // The use of $test$plusargs() is not allowed.

@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "verilog/analysis/checkers/default_nettype_rule.h"
+#include "verible/verilog/analysis/checkers/default-nettype-rule.h"
+
+#include <string_view>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "common/analysis/lint_rule_status.h"
-#include "common/analysis/token_stream_lint_rule.h"
-#include "common/text/token_info.h"
-#include "verilog/analysis/descriptions.h"
-#include "verilog/analysis/lint_rule_registry.h"
-#include "verilog/parser/verilog_token_enum.h"
+#include "verible/common/analysis/lint-rule-status.h"
+#include "verible/common/text/token-info.h"
+#include "verible/verilog/analysis/descriptions.h"
+#include "verible/verilog/analysis/lint-rule-registry.h"
+#include "verible/verilog/parser/verilog-token-enum.h"
 
 namespace verilog {
 namespace analysis {
@@ -34,12 +35,11 @@ using verible::TokenInfo;
 // Register the lint rule
 VERILOG_REGISTER_LINT_RULE(DefaultNetTypeRule);
 
-static constexpr absl::string_view kMessage =
+static constexpr std::string_view kMessage =
     "`default_nettype none should be present before the first module, class or "
     "interface.";
 
-static constexpr absl::string_view kAutofixMessage =
-    "Add `default_nettype none";
+static constexpr std::string_view kAutofixMessage = "Add `default_nettype none";
 
 const LintRuleDescriptor &DefaultNetTypeRule::GetDescriptor() {
   static const LintRuleDescriptor d{
@@ -75,18 +75,19 @@ void DefaultNetTypeRule::HandleToken(const TokenInfo &token) {
       first_token_ = &token;
 
       state_ = State::kSearch;
-      // fall-through to default
+      // fall-through to State::kSearch
     }
     case State::kSearch: {
       switch (token.token_enum()) {
         case DR_default_nettype: {
-          state_ = State::kNetType;
+          default_nettype_token_ = &token;
+          state_ = State::kSearchDefaultNettypeValue;
           break;
         }
         case TK_module:
         case TK_class:
         case TK_interface: {
-          if (!found_default_nettype_none_) {
+          if (!found_default_nettype_) {
             std::vector<AutoFix> autofixes{
                 AutoFix(kAutofixMessage,
                         {*first_token_, absl::StrCat("`default_nettype none\n",
@@ -103,15 +104,17 @@ void DefaultNetTypeRule::HandleToken(const TokenInfo &token) {
       }
       break;
     }
-    case State::kNetType: {
-      if (token.token_enum() == SymbolIdentifier) {
-        if (token.text() == "none") {
-          found_default_nettype_none_ = true;
-        }
-        state_ = State::kSearch;
-      } else {
-        state_ = State::kSearch;
+    case State::kSearchDefaultNettypeValue: {
+      found_default_nettype_ = true;
+      if (token.token_enum() != SymbolIdentifier) {
+        std::vector<AutoFix> autofixes{
+            AutoFix(kAutofixMessage, {
+                                         {token, absl::StrCat("none")},
+                                     })};
+
+        violations_.insert(LintViolation(token, kMessage, autofixes));
       }
+      state_ = State::kComplete;
       break;
     }
     default: {

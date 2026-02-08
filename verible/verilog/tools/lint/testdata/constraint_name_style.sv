@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 class constraints_check;
   logic max;
   // This line should trigger the constraint naming convention rule check

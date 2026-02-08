@@ -14,12 +14,11 @@
 
 #include "verible/verilog/CST/directive.h"
 
-#include <vector>
-
+#include "absl/log/die_if_null.h"
 #include "gtest/gtest.h"
-#include "verible/common/analysis/syntax_tree_search.h"
-#include "verible/common/analysis/syntax_tree_search_test_utils.h"
-#include "verible/verilog/CST/match_test_utils.h"
+#include "verible/common/analysis/syntax-tree-search-test-utils.h"
+#include "verible/common/text/text-structure.h"
+#include "verible/verilog/CST/match-test-utils.h"
 
 // #undef ASSERT_OK
 // #define ASSERT_OK(value) ASSERT_TRUE((value).ok())
@@ -31,7 +30,6 @@ namespace {
 
 using verible::SyntaxTreeSearchTestCase;
 using verible::TextStructureView;
-using verible::TreeSearchMatch;
 
 TEST(FindAllTopLevelDirectives, CountMatches) {
   constexpr int kTag = 1;  // value doesn't matter

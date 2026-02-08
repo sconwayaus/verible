@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module numeric_format_string_style;
   initial begin
     // [Style: number-formatting] [numeric-format-string-style]

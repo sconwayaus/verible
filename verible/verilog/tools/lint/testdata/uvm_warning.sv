@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 class foo;
   task bar;
     `uvm_warning("use uvm_error or uvm_info")

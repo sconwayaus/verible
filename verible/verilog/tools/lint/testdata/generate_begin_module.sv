@@ -1,3 +1,4 @@
+// verilog_lint: waive default-nettype
 module generate_begin_module;
   // verilog_lint: waive legacy-generate-region
   generate
